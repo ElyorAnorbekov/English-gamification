@@ -1509,6 +1509,161 @@ Simple lookup
     ↓
 Target ≤ 100 ms database-side execution
 
+# Section 18 — Backup, Restore & Disaster Recovery
+
+---
+
+## 18.1 Purpose
+
+This section defines the database backup, restore, disaster recovery, data recovery, and business continuity requirements.
+
+The purpose is to ensure that database data can be recovered after:
+
+- Accidental deletion
+- Database corruption
+- Failed migration
+- Application error
+- Infrastructure failure
+- Credential compromise
+- Hosting failure
+- Operational mistake
+- Other unexpected incidents
+
+The recovery architecture must remain lightweight and appropriate for the project's initial scale.
+
+---
+
+# 18.2 Backup Principles
+
+Database backups shall follow these principles:
+
+1. Production data must be recoverable.
+2. Backups must be automated where supported.
+3. Backup status must be monitored.
+4. Backups must be protected from unauthorized access.
+5. Backups must not depend exclusively on the production database.
+6. Restore procedures must be tested.
+7. Backup retention must be explicitly defined.
+8. Backup credentials must be protected.
+9. Backup failures must generate operational alerts.
+10. The recovery process must be documented.
+
+---
+
+# 18.3 Backup Scope
+
+The backup strategy should cover:
+
+```text
+Database schema
+Database tables
+Indexes where applicable
+Constraints
+Functions
+Triggers
+RLS policies
+Database configuration required for recovery
+Required metadata
+
+# Section 19 — Database Maintenance & Lifecycle Management
+
+---
+
+## 19.1 Purpose
+
+This section defines the database maintenance, lifecycle management, cleanup, vacuuming, statistics, schema evolution, deprecated data handling, and long-term database health requirements.
+
+The database must remain:
+
+- Stable
+- Maintainable
+- Performant
+- Secure
+- Consistent
+- Recoverable
+- Scalable within the project's expected growth
+
+Maintenance operations must not unnecessarily interrupt normal teacher workflows.
+
+---
+
+# 19.2 Maintenance Principles
+
+Database maintenance shall follow these principles:
+
+1. Maintenance must be planned.
+2. Production maintenance must be controlled.
+3. Automated maintenance should be preferred where reliable.
+4. Maintenance must preserve data integrity.
+5. Maintenance must not bypass security controls.
+6. Destructive maintenance must require additional verification.
+7. Database growth must be monitored.
+8. Deprecated structures must be removed carefully.
+9. Schema changes must be migration-controlled.
+10. Maintenance activities must be documented when operationally significant.
+
+---
+
+# 19.3 PostgreSQL Automatic Maintenance
+
+PostgreSQL automatic maintenance mechanisms should be enabled and appropriately configured.
+
+The system should rely on PostgreSQL mechanisms such as:
+
+```text
+VACUUM
+ANALYZE
+Autovacuum
+Autoanalyze
+
+# Section 20 — Database Documentation, Governance & Final Standards
+
+---
+
+## 20.1 Purpose
+
+This section defines the documentation, governance, ownership, change-control, review, and final database standards for the project.
+
+The purpose is to ensure that the database remains:
+
+- Understandable
+- Consistent
+- Maintainable
+- Secure
+- Performant
+- Recoverable
+- Properly documented
+- Controlled throughout its lifecycle
+
+This section serves as the final governance layer for all database-related decisions.
+
+---
+
+# 20.2 Database as a Core System Component
+
+The database is a core component of the application architecture.
+
+It is responsible for storing and managing:
+
+```text
+Teachers
+Groups
+Students
+Lessons
+Attendance
+Homework
+Gamification
+Points
+XP
+Levels
+Badges
+Achievements
+Activity Logs
+System Configuration
+Historical Data
+
+
+
 
 
 
