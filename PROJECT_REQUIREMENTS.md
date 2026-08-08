@@ -12228,3 +12228,7465 @@ Implementation shall:
 ---
 
 **End of Part 4 – Section 6 (Certificate Tables)**
+# Part 4 – Database Requirements
+## Section 7 – Analytics Tables
+
+---
+
+# 4.118 Purpose
+
+This section defines the database structures required for analytics, statistical summaries, historical snapshots, trends, rankings, and classroom performance visualization.
+
+The analytics architecture shall provide fast access to frequently requested statistics without unnecessarily recalculating large amounts of historical data.
+
+Analytics shall be generated from authoritative source data and shall never replace the original academic records.
+
+---
+
+# 4.119 Analytics Design Principles
+
+The analytics system shall follow these principles:
+
+- Source data remains authoritative.
+- Analytics data is derived data.
+- Historical records shall remain preserved.
+- Frequently requested statistics may be cached.
+- Analytics calculations shall not modify source records.
+- Statistics shall remain consistent with source data.
+- Only teacher-owned data shall be included.
+
+---
+
+# 4.120 Weekly Statistics Table
+
+Table Name:
+
+weekly_statistics
+
+Purpose:
+
+Stores weekly statistical summaries for students and groups.
+
+Columns:
+
+- id (UUID, Primary Key)
+- teacher_id (UUID, Foreign Key)
+- group_id (UUID, Foreign Key)
+- student_id (UUID, Foreign Key)
+- week_start_date
+- week_end_date
+- attendance_rate
+- homework_completion_rate
+- weekly_points
+- weekly_xp
+- payment_status
+- current_rank
+- previous_rank
+- rank_change
+- created_at
+- updated_at
+
+Each record shall represent one student's weekly statistical snapshot.
+
+---
+
+# 4.121 Monthly Statistics Table
+
+Table Name:
+
+monthly_statistics
+
+Purpose:
+
+Stores monthly statistical summaries.
+
+Columns:
+
+- id
+- teacher_id
+- group_id
+- student_id
+- academic_year
+- academic_month
+- attendance_rate
+- homework_completion_rate
+- monthly_points
+- monthly_xp
+- payment_status
+- current_rank
+- previous_rank
+- rank_change
+- badges_earned
+- achievements_earned
+- certificates_earned
+- created_at
+- updated_at
+
+Monthly statistics shall remain available after the month ends.
+
+---
+
+# 4.122 Group Statistics Table
+
+Table Name:
+
+group_statistics
+
+Purpose:
+
+Stores aggregated group-level statistics.
+
+Columns:
+
+- id
+- teacher_id
+- group_id
+- period_type
+- period_start
+- period_end
+- student_count
+- average_attendance
+- average_homework_completion
+- average_points
+- average_xp
+- paid_count
+- pending_count
+- late_count
+- created_at
+- updated_at
+
+Period types:
+
+- Weekly
+- Monthly
+
+---
+
+# 4.123 Dashboard Cache Table
+
+Table Name:
+
+dashboard_cache
+
+Purpose:
+
+Stores frequently requested dashboard statistics to improve application performance.
+
+Columns:
+
+- id
+- teacher_id
+- group_id (nullable)
+- cache_key
+- cache_data
+- expires_at
+- created_at
+- updated_at
+
+cache_data shall use JSONB when appropriate.
+
+Cached information shall always be derived from authoritative database records.
+
+---
+
+# 4.124 Student Performance Trends Table
+
+Table Name:
+
+student_performance_trends
+
+Purpose:
+
+Stores calculated performance trends.
+
+Columns:
+
+- id
+- teacher_id
+- student_id
+- group_id
+- metric_type
+- previous_value
+- current_value
+- change_value
+- change_percentage
+- trend_direction
+- period_type
+- period_start
+- period_end
+- created_at
+
+Metric types may include:
+
+- Attendance
+- Homework
+- Points
+- XP
+- Ranking
+- Payment
+
+Trend directions:
+
+- Improving
+- Stable
+- Declining
+
+---
+
+# 4.125 Class Heatmap Data Table
+
+Table Name:
+
+class_heatmap_data
+
+Purpose:
+
+Stores aggregated classroom activity data for heatmap visualization.
+
+Columns:
+
+- id
+- teacher_id
+- group_id
+- lesson_id
+- lesson_date
+- attendance_count
+- late_count
+- absent_count
+- excused_count
+- homework_completed_count
+- homework_missing_count
+- average_points
+- created_at
+
+The heatmap shall help teachers identify patterns in classroom participation and performance.
+
+---
+
+# 4.126 Student Attention Indicators Table
+
+Table Name:
+
+student_attention_indicators
+
+Purpose:
+
+Stores calculated indicators identifying students who may require teacher attention.
+
+Columns:
+
+- id
+- teacher_id
+- student_id
+- group_id
+- attendance_indicator
+- homework_indicator
+- payment_indicator
+- performance_indicator
+- overall_indicator
+- calculated_at
+- updated_at
+
+Indicators shall be informational only.
+
+The system shall not make medical, psychological, or other sensitive classifications.
+
+---
+
+# 4.127 Report Snapshots Table
+
+Table Name:
+
+report_snapshots
+
+Purpose:
+
+Stores finalized weekly and monthly report snapshots.
+
+Columns:
+
+- id
+- teacher_id
+- group_id
+- report_type
+- period_start
+- period_end
+- report_data
+- generated_at
+
+report_data may use JSONB.
+
+Historical report snapshots shall remain unchanged after finalization.
+
+---
+
+# 4.128 Analytics Period Rules
+
+Analytics shall support:
+
+- Weekly Periods
+- Monthly Periods
+- Custom Date Ranges
+
+Weekly periods shall use the application's configured week definition.
+
+Monthly periods shall follow the academic month assigned to the group.
+
+---
+
+# 4.129 Historical Data Rules
+
+Historical analytics shall remain available after:
+
+- Month completion
+- Student archival
+- Group archival
+- Teacher logout
+- New academic year
+
+Historical statistics shall not be automatically deleted.
+
+---
+
+# 4.130 Ranking Data
+
+Ranking analytics shall use:
+
+- Total Points
+- Monthly Points
+- Weekly Points
+- XP
+- Current Level
+
+Ranking calculations shall use the appropriate period.
+
+Historical rankings shall be stored separately from current rankings.
+
+---
+
+# 4.131 Telegram Statistics Support
+
+The analytics database shall provide data required to generate Telegram summaries.
+
+Possible data:
+
+- Top Students
+- Weekly Points
+- Monthly Points
+- Attendance Summary
+- Homework Summary
+- Ranking Changes
+- Achievements
+- Badges
+- Certificates
+
+Telegram formatting shall be handled by the application layer.
+
+---
+
+# 4.132 Analytics Refresh Rules
+
+Analytics shall refresh when relevant source data changes.
+
+Examples:
+
+Attendance Updated
+
+↓
+
+Attendance Analytics Updated
+
+Homework Evaluated
+
+↓
+
+Homework Analytics Updated
+
+Payment Updated
+
+↓
+
+Payment Analytics Updated
+
+Points Changed
+
+↓
+
+Ranking Analytics Updated
+
+The system shall avoid unnecessary full-database recalculation.
+
+---
+
+# 4.133 Cache Rules
+
+Cached analytics shall have an expiration time.
+
+Expired cache entries may be regenerated automatically.
+
+Cache failure shall never result in loss of source data.
+
+If cached data is unavailable, the application shall calculate the required statistic directly from source data.
+
+---
+
+# 4.134 Data Accuracy Rules
+
+Analytics shall always be derived from authoritative records.
+
+Authoritative records include:
+
+- Attendance
+- Homework
+- Payments
+- Transactions
+- Students
+- Lessons
+
+Cached or snapshot data shall never become the only source of truth.
+
+---
+
+# 4.135 Indexes
+
+Indexes shall be created for:
+
+- teacher_id
+- group_id
+- student_id
+- period_start
+- period_end
+- academic_year
+- academic_month
+- metric_type
+- cache_key
+
+Composite indexes shall be used where frequently filtered combinations justify them.
+
+---
+
+# 4.136 Constraints
+
+The database shall enforce:
+
+- Valid teacher references
+- Valid group references
+- Valid student references
+- Valid period ranges
+- Valid metric types
+- Unique weekly student snapshots
+- Unique monthly student snapshots
+
+---
+
+# 4.137 Functional Summary
+
+The Analytics Database shall support:
+
+- Weekly Statistics
+- Monthly Statistics
+- Group Statistics
+- Dashboard Cache
+- Performance Trends
+- Class Heatmap
+- Student Attention Indicators
+- Report Snapshots
+- Ranking Analytics
+- Telegram Statistics
+
+---
+
+# 4.138 Acceptance Criteria
+
+The Analytics Database shall be considered complete if:
+
+- Weekly statistics are generated correctly.
+- Monthly statistics are preserved historically.
+- Group statistics are accurate.
+- Dashboard data loads quickly.
+- Trends are calculated correctly.
+- Heatmap data is available.
+- Historical reports remain accessible.
+- Cached data never replaces source data.
+- Analytics update after relevant changes.
+- Teacher data remains isolated.
+
+---
+
+# 4.139 AI Implementation Notes
+
+Implementation shall:
+
+- Keep source records separate from derived analytics.
+- Use indexed queries.
+- Use caching only where beneficial.
+- Avoid unnecessary database recalculation.
+- Generate analytics incrementally when possible.
+- Use JSONB only for flexible derived data.
+- Preserve historical snapshots.
+- Optimize dashboard queries for desktop performance.
+- Support up to 20 teacher accounts without unnecessary infrastructure.
+- Follow SOLID principles.
+- Maintain production-quality PostgreSQL architecture.
+
+---
+
+**End of Part 4 – Section 7 (Analytics Tables)**
+
+# Part 4 – Database Requirements
+## Section 8 – Activity & Logs
+
+---
+
+# 4.140 Purpose
+
+This section defines the database structures required to record application activity, audit events, notifications, and important system events.
+
+The logging system shall provide a reliable historical record of important actions performed by teachers and the application.
+
+Logs shall be lightweight and optimized for fast storage and retrieval.
+
+---
+
+# 4.141 Activity Log Table
+
+Table Name:
+
+activity_logs
+
+Purpose:
+
+Stores a chronological record of important teacher actions inside the application.
+
+Columns:
+
+- id (UUID, Primary Key)
+- teacher_id (UUID, Foreign Key)
+- group_id (UUID, Foreign Key, nullable)
+- student_id (UUID, Foreign Key, nullable)
+- module
+- action
+- description
+- metadata (optional JSONB)
+- created_at
+
+Examples of actions:
+
+- Group Created
+- Group Updated
+- Group Archived
+- Student Added
+- Student Updated
+- Student Archived
+- Attendance Updated
+- Homework Added
+- Homework Evaluated
+- Payment Updated
+- Points Added
+- Points Deducted
+- Badge Awarded
+- Achievement Unlocked
+- Certificate Generated
+- Certificate Revoked
+- Teacher Note Created
+- Settings Updated
+
+---
+
+# 4.142 Audit Log Table
+
+Table Name:
+
+audit_logs
+
+Purpose:
+
+Stores security-sensitive and data-changing events that require an immutable audit trail.
+
+Columns:
+
+- id
+- teacher_id
+- entity_type
+- entity_id
+- action
+- old_data (optional JSONB)
+- new_data (optional JSONB)
+- performed_at
+
+Audit records shall be append-only.
+
+---
+
+# 4.143 Activity Log vs Audit Log
+
+Activity Logs are designed for:
+
+- Teacher-facing activity history
+- Recent actions
+- Group activity
+- Student activity
+- General system usage
+
+Audit Logs are designed for:
+
+- Security
+- Data integrity
+- Important record changes
+- Before/after data comparison
+- Investigation of unexpected changes
+
+The two systems shall remain logically separate.
+
+---
+
+# 4.144 Notification Table
+
+Table Name:
+
+notifications
+
+Purpose:
+
+Stores notifications displayed to teachers.
+
+Columns:
+
+- id
+- teacher_id
+- group_id (nullable)
+- student_id (nullable)
+- notification_type
+- title
+- message
+- is_read
+- created_at
+- read_at (nullable)
+
+Notifications shall belong to exactly one teacher.
+
+---
+
+# 4.145 Notification Types
+
+Supported notification types may include:
+
+- Attendance
+- Homework
+- Payment
+- Achievement
+- Badge
+- Streak
+- Birthday
+- Certificate
+- Ranking
+- System
+
+The system shall support future notification types.
+
+---
+
+# 4.146 Notification Rules
+
+Notifications may be generated when:
+
+- A student receives a reward.
+- A student receives a penalty.
+- A student unlocks an achievement.
+- A student earns a badge.
+- A streak is created.
+- A streak is broken.
+- A payment becomes Late.
+- A certificate is generated.
+- A birthday reward is issued.
+
+Notifications shall not modify academic records.
+
+---
+
+# 4.147 Notification Read State
+
+Each notification shall support:
+
+- Unread
+- Read
+
+When a teacher opens a notification:
+
+is_read = true
+
+read_at shall store the time it was read.
+
+---
+
+# 4.148 System Events Table
+
+Table Name:
+
+system_events
+
+Purpose:
+
+Stores important automated events generated by the application.
+
+Columns:
+
+- id
+- event_type
+- teacher_id (nullable)
+- group_id (nullable)
+- student_id (nullable)
+- related_entity_type (nullable)
+- related_entity_id (nullable)
+- event_data (optional JSONB)
+- created_at
+
+System events may include:
+
+- Monthly Reset
+- Weekly Calculation
+- Ranking Update
+- Achievement Check
+- Streak Update
+- Analytics Refresh
+- Certificate Generation
+- Payment Status Check
+
+---
+
+# 4.149 Event Idempotency
+
+Automated system events shall be idempotent.
+
+The same event shall not accidentally execute the same reward or penalty multiple times.
+
+Example:
+
+A monthly payment bonus must not be awarded twice because the analytics process runs twice.
+
+---
+
+# 4.150 Activity Log Retention
+
+Activity logs shall remain available for historical reference.
+
+The application shall not automatically delete recent activity logs.
+
+Old logs may be archived in the future if database growth requires it.
+
+---
+
+# 4.151 Audit Log Immutability
+
+Audit logs shall be append-only.
+
+Teachers shall not be able to:
+
+- Edit audit logs.
+- Delete audit logs.
+- Modify timestamps.
+- Modify historical actions.
+
+---
+
+# 4.152 Metadata Rules
+
+Metadata may be stored using JSONB when additional contextual information is required.
+
+Examples:
+
+- Previous attendance status
+- New attendance status
+- Previous points
+- New points
+- Previous payment status
+- New payment status
+
+Metadata shall not contain unnecessary sensitive information.
+
+---
+
+# 4.153 Activity Filtering
+
+Teachers shall be able to filter activity logs by:
+
+- Date
+- Group
+- Student
+- Module
+- Action
+
+Filtering shall be optimized using indexes.
+
+---
+
+# 4.154 Student Activity Timeline
+
+The system shall support a student-specific activity timeline.
+
+Possible timeline events:
+
+- Attendance
+- Homework
+- Points
+- XP
+- Badge
+- Achievement
+- Payment
+- Certificate
+- Teacher Award
+
+The timeline shall be generated from relevant historical records and activity events.
+
+---
+
+# 4.155 Group Activity Timeline
+
+The system shall support a group-level activity timeline.
+
+Examples:
+
+- Student Added
+- Student Removed
+- Lesson Completed
+- Homework Assigned
+- Ranking Updated
+- Certificate Awarded
+
+Only the owning teacher shall access the group timeline.
+
+---
+
+# 4.156 Notification Performance
+
+Notification queries shall prioritize:
+
+- teacher_id
+- is_read
+- created_at
+
+Unread notifications shall load quickly.
+
+---
+
+# 4.157 Indexes
+
+Indexes shall be created for:
+
+- teacher_id
+- group_id
+- student_id
+- created_at
+- action
+- module
+- notification_type
+- is_read
+- event_type
+
+Composite indexes shall be used for common queries.
+
+---
+
+# 4.158 Constraints
+
+The database shall enforce:
+
+- Valid teacher references.
+- Valid group references.
+- Valid student references.
+- Valid notification types.
+- Valid event types.
+- Immutable audit records.
+- Required timestamps.
+
+---
+
+# 4.159 Security
+
+Row Level Security shall be enabled on:
+
+- activity_logs
+- audit_logs
+- notifications
+- system_events
+
+Teachers shall only access records belonging to their own account.
+
+---
+
+# 4.160 Functional Summary
+
+The Activity & Logs Database shall support:
+
+- Activity Logs
+- Audit Logs
+- Notifications
+- System Events
+- Student Timelines
+- Group Timelines
+- Read/Unread Notifications
+- Event Idempotency
+- Historical Activity
+
+---
+
+# 4.161 Acceptance Criteria
+
+The Activity & Logs System shall be considered complete if:
+
+- Important teacher actions are recorded.
+- Audit records cannot be modified by teachers.
+- Notifications are stored correctly.
+- Read/unread states work correctly.
+- System events are recorded.
+- Duplicate automated events are prevented.
+- Student timelines display relevant events.
+- Group timelines display relevant events.
+- Teachers cannot access another teacher's logs.
+- Activity searches remain fast.
+
+---
+
+# 4.162 AI Implementation Notes
+
+Implementation shall:
+
+- Use append-only audit records.
+- Keep activity logs lightweight.
+- Use JSONB only for optional metadata.
+- Use indexed queries.
+- Enforce Row Level Security.
+- Prevent duplicate automated events.
+- Avoid storing unnecessary sensitive information.
+- Separate user-facing activity logs from security audit logs.
+- Optimize notification queries.
+- Maintain production-quality PostgreSQL architecture.
+
+---
+
+**End of Part 4 – Section 8 (Activity & Logs)**
+
+# Part 4 – Database Requirements
+## Section 9 – Import, Export & File Data
+
+---
+
+# 4.163 Purpose
+
+This section defines the database structures and rules required for importing student data, exporting statistical data, managing uploaded files, and maintaining file-related metadata.
+
+The system shall prioritize simple, fast, and lightweight data operations.
+
+---
+
+# 4.164 Student Import
+
+The system shall support bulk student creation.
+
+Teachers shall be able to add multiple students using:
+
+- Copy and Paste
+- Spreadsheet data
+- Manual entry
+
+The primary bulk-entry workflow shall support:
+
+CTRL + C
+
+↓
+
+Spreadsheet
+
+↓
+
+CTRL + V
+
+↓
+
+Website Student Import Area
+
+↓
+
+Preview
+
+↓
+
+Confirm
+
+↓
+
+Students Added
+
+---
+
+# 4.165 Import Fields
+
+The bulk student import system shall support at minimum:
+
+- Full Name
+- Phone Number
+- Payment Number
+
+Optional fields may include:
+
+- Birthday
+- Parent Phone Number
+- Join Date
+
+The system shall allow teachers to paste rows directly from spreadsheet applications.
+
+---
+
+# 4.166 Import Preview
+
+Before saving imported students, the application shall display a preview.
+
+The preview shall show:
+
+- Number of detected students
+- Valid rows
+- Invalid rows
+- Duplicate rows
+- Missing required fields
+
+Teachers shall be able to cancel the import before confirmation.
+
+---
+
+# 4.167 Import Validation
+
+The import system shall validate:
+
+- Required fields
+- Empty names
+- Invalid phone numbers
+- Duplicate students
+- Invalid data formats
+
+Invalid rows shall not crash the application.
+
+The system shall clearly indicate which rows require correction.
+
+---
+
+# 4.168 Import Error Handling
+
+Import errors shall be displayed in a simple human-readable format.
+
+Example:
+
+Row 5:
+Missing student name.
+
+Row 8:
+Duplicate student.
+
+Row 12:
+Invalid phone number.
+
+The system shall allow valid rows to be imported without forcing the teacher to manually re-enter all data.
+
+---
+
+# 4.169 Import History Table
+
+Table Name:
+
+import_jobs
+
+Purpose:
+
+Stores information about bulk import operations.
+
+Columns:
+
+- id
+- teacher_id
+- group_id
+- import_type
+- total_rows
+- successful_rows
+- failed_rows
+- duplicate_rows
+- status
+- error_data (optional JSONB)
+- created_at
+- completed_at
+
+Import Status values:
+
+- Processing
+- Completed
+- Completed With Errors
+- Failed
+
+---
+
+# 4.170 Export Jobs Table
+
+Table Name:
+
+export_jobs
+
+Purpose:
+
+Stores information about generated data exports.
+
+Columns:
+
+- id
+- teacher_id
+- group_id (nullable)
+- export_type
+- file_format
+- date_from (nullable)
+- date_to (nullable)
+- status
+- file_path
+- created_at
+- completed_at
+
+---
+
+# 4.171 Supported Export Types
+
+The system shall support exporting:
+
+- Student List
+- Attendance
+- Homework
+- Payments
+- Points
+- XP
+- Rankings
+- Weekly Statistics
+- Monthly Statistics
+- Group Statistics
+- Certificates
+- Full Group Report
+
+---
+
+# 4.172 Supported Export Formats
+
+The system shall support:
+
+- XLSX
+- CSV
+- PDF
+
+XLSX shall be the primary spreadsheet export format.
+
+The application may support legacy XLS where technically appropriate.
+
+---
+
+# 4.173 Export Filtering
+
+Teachers shall be able to export data based on:
+
+- Group
+- Student
+- Month
+- Week
+- Date Range
+- Data Type
+
+Exported data shall contain only the teacher's own records.
+
+---
+
+# 4.174 File Metadata Table
+
+Table Name:
+
+file_metadata
+
+Purpose:
+
+Stores metadata for uploaded or generated files.
+
+Columns:
+
+- id
+- teacher_id
+- entity_type
+- entity_id
+- file_name
+- file_path
+- file_type
+- file_size
+- created_at
+
+The database shall store file metadata rather than large binary files whenever possible.
+
+---
+
+# 4.175 File Types
+
+Supported file categories may include:
+
+- Certificate Template
+- Generated Certificate
+- Export File
+- Import File
+
+The system shall validate file extensions and MIME types.
+
+---
+
+# 4.176 File Storage
+
+Large files shall not be stored directly inside PostgreSQL unless specifically required.
+
+Files shall be stored using the application's configured storage provider.
+
+The database shall store:
+
+- File Path
+- File Name
+- File Type
+- File Size
+- Owner
+- Related Entity
+
+---
+
+# 4.177 File Ownership
+
+Every uploaded or generated file shall be associated with:
+
+teacher_id
+
+Teachers shall only access their own files.
+
+---
+
+# 4.178 Temporary Files
+
+Temporary import and export files may be automatically removed after their retention period.
+
+Temporary files shall not affect permanent academic records.
+
+---
+
+# 4.179 Export Data Integrity
+
+Exported statistics shall be generated from authoritative database records.
+
+Exports shall not modify:
+
+- Attendance
+- Homework
+- Payments
+- Points
+- XP
+- Student Data
+
+---
+
+# 4.180 Export Performance
+
+Large exports shall not block the main application interface.
+
+Where necessary, exports may be processed asynchronously.
+
+The user shall receive a notification when an export is ready.
+
+---
+
+# 4.181 Import Performance
+
+Bulk student imports shall be optimized for fast processing.
+
+The system shall support importing a large number of students without unnecessary individual database requests.
+
+Batch insertion shall be preferred.
+
+---
+
+# 4.182 Import Duplicate Handling
+
+Duplicate detection shall use available identifying information.
+
+Possible matching fields:
+
+- Student ID
+- Full Name
+- Phone Number
+
+The system shall not automatically delete existing students because of a duplicate import.
+
+---
+
+# 4.183 Data Recovery
+
+Import operations shall use safe transactions where possible.
+
+If an import operation fails unexpectedly, the database shall avoid leaving partially corrupted records.
+
+---
+
+# 4.184 Indexes
+
+Indexes shall be created for:
+
+- teacher_id
+- group_id
+- import_type
+- export_type
+- status
+- created_at
+- entity_type
+- entity_id
+
+---
+
+# 4.185 Security
+
+Row Level Security shall be enabled for:
+
+- import_jobs
+- export_jobs
+- file_metadata
+
+Teachers shall only access their own import records, export records, and files.
+
+---
+
+# 4.186 Functional Summary
+
+The Import, Export & File Data System shall support:
+
+- CTRL+C / CTRL+V Student Import
+- Spreadsheet Import
+- Import Preview
+- Import Validation
+- Duplicate Detection
+- Import History
+- XLSX Export
+- CSV Export
+- PDF Export
+- Certificate Files
+- File Metadata
+- Temporary File Management
+- Secure File Ownership
+
+---
+
+# 4.187 Acceptance Criteria
+
+This section shall be considered complete if:
+
+- Teachers can paste student lists directly from spreadsheets.
+- Imported data can be previewed before saving.
+- Invalid rows are clearly identified.
+- Duplicate students are detected.
+- Valid students can be imported efficiently.
+- XLSX exports work correctly.
+- PDF and CSV exports work correctly where applicable.
+- Exported data contains only the teacher's own data.
+- Files are securely associated with their owner.
+- Import and export operations do not corrupt existing data.
+- Large operations do not unnecessarily freeze the interface.
+
+---
+
+# 4.188 AI Implementation Notes
+
+Implementation shall:
+
+- Prefer batch database operations.
+- Avoid unnecessary API requests.
+- Validate pasted spreadsheet data before insertion.
+- Use database transactions for critical bulk operations.
+- Keep large files outside PostgreSQL when possible.
+- Store file metadata in PostgreSQL.
+- Use Row Level Security.
+- Keep import and export operations lightweight.
+- Avoid unnecessary background infrastructure.
+- Prefer free and open-source technologies.
+- Maintain compatibility with the project's performance requirements.
+- Follow SOLID principles.
+- Maintain production-quality PostgreSQL architecture.
+
+---
+
+**End of Part 4 – Section 9 (Import, Export & File Data)**
+
+# Part 4 – Database Requirements
+## Section 10 – Database Security, Integrity & Final Standards
+
+---
+
+# 4.189 Purpose
+
+This section defines the final database security, integrity, access control, backup, recovery, consistency, and architectural requirements.
+
+The database shall be designed for:
+
+- Security
+- Reliability
+- Data integrity
+- Fast queries
+- Scalability
+- Easy maintenance
+- Low infrastructure cost
+- Long-term historical data preservation
+
+---
+
+# 4.190 Database Technology
+
+The primary database technology shall be:
+
+PostgreSQL
+
+The database shall preferably be hosted using:
+
+Supabase PostgreSQL
+
+The implementation shall use free-tier resources where technically sufficient.
+
+No paid database infrastructure shall be required for the initial deployment.
+
+---
+
+# 4.191 Primary Key Standard
+
+All major application tables shall use:
+
+UUID
+
+UUIDs shall be used for:
+
+- Teachers
+- Groups
+- Students
+- Lessons
+- Homework
+- Payments
+- Transactions
+- Badges
+- Achievements
+- Certificates
+- Notifications
+- Logs
+- Analytics records
+
+Sequential integer IDs shall not be required for primary application entities.
+
+---
+
+# 4.192 Foreign Key Rules
+
+All relationships between entities shall use foreign keys.
+
+Examples:
+
+teacher_id
+group_id
+student_id
+lesson_id
+homework_id
+payment_id
+
+Foreign keys shall prevent orphaned records.
+
+---
+
+# 4.193 Row Level Security
+
+Row Level Security (RLS) shall be enabled for all teacher-owned tables.
+
+Every teacher shall only access records associated with their authenticated account.
+
+Example:
+
+Teacher A
+
+↓
+
+Groups belonging to Teacher A
+
+↓
+
+Students belonging to Teacher A
+
+Teacher A shall never access:
+
+Teacher B's Groups
+
+Teacher B's Students
+
+Teacher B's Statistics
+
+Teacher B's Logs
+
+Teacher B's Certificates
+
+---
+
+# 4.194 RLS Policy Principles
+
+RLS policies shall be based on the authenticated Supabase user.
+
+The application shall never rely exclusively on frontend filtering for security.
+
+Security must be enforced at the database level.
+
+Frontend restrictions shall be considered a usability layer only.
+
+---
+
+# 4.195 Teacher Data Ownership
+
+All teacher-owned records shall ultimately be associated with:
+
+teacher_id
+
+This includes:
+
+- Groups
+- Students
+- Lessons
+- Attendance
+- Homework
+- Payments
+- Transactions
+- Badges
+- Achievements
+- Certificates
+- Notes
+- Notifications
+- Analytics
+- Activity Logs
+
+---
+
+# 4.196 Soft Delete
+
+Important records shall use soft deletion where historical preservation is required.
+
+Example:
+
+deleted_at
+
+Soft deletion may be used for:
+
+- Groups
+- Students
+- Homework Templates
+- Certificate Templates
+
+Records shall not be permanently deleted unless explicitly required.
+
+---
+
+# 4.197 Historical Data Preservation
+
+Historical data shall remain available for reporting.
+
+The system shall preserve:
+
+- Previous attendance
+- Previous homework
+- Previous payments
+- Point transactions
+- XP transactions
+- Achievements
+- Badges
+- Rankings
+- Certificates
+- Activity logs
+
+Historical records shall not be overwritten simply because a new month begins.
+
+---
+
+# 4.198 Transaction Integrity
+
+Critical multi-step operations shall use database transactions.
+
+Examples:
+
+Attendance Update
+
+↓
+
+Attendance Record Updated
+
+↓
+
+Points Transaction Created
+
+↓
+
+Analytics Updated
+
+↓
+
+Activity Log Created
+
+All critical operations shall either complete successfully or safely roll back.
+
+---
+
+# 4.199 Duplicate Prevention
+
+The database shall prevent duplicate records where logically required.
+
+Examples:
+
+- One attendance record per student per lesson.
+- One homework progress record per student per homework.
+- One monthly payment per student.
+- One level record per student.
+- One birthday reward per student per year.
+- Unique certificate number.
+
+Unique constraints shall be preferred over application-only duplicate checks.
+
+---
+
+# 4.200 Data Validation
+
+Database constraints shall validate important fields.
+
+Examples:
+
+- Required names cannot be empty.
+- Points must use valid numeric values.
+- XP must use valid numeric values.
+- Dates must use valid date formats.
+- Foreign keys must reference existing records.
+- Status fields must contain valid values.
+
+Application-level validation shall complement database-level validation.
+
+---
+
+# 4.201 Point Integrity
+
+Points shall never be directly overwritten when historical tracking is required.
+
+Point changes shall create transactions.
+
+Example:
+
+Previous Points:
+
+100
+
+Reward:
+
++20
+
+New Total:
+
+120
+
+The transaction history shall preserve:
+
++20
+
+Reason:
+
+Homework Completed
+
+---
+
+# 4.202 XP Integrity
+
+XP changes shall follow the same transaction-based approach.
+
+XP history shall remain available for:
+
+- Level calculations
+- Analytics
+- Historical reports
+- Ranking
+- Achievement progress
+
+---
+
+# 4.203 Current Totals
+
+Current student totals may be stored for performance optimization.
+
+Examples:
+
+- total_points
+- total_xp
+- current_level
+
+However, these values shall be considered derived values.
+
+The transaction history shall remain the authoritative historical record.
+
+---
+
+# 4.204 Database Indexing Strategy
+
+Indexes shall be created only where they provide measurable query benefits.
+
+Frequently queried fields may include:
+
+- teacher_id
+- group_id
+- student_id
+- lesson_id
+- homework_id
+- payment_status
+- created_at
+- lesson_date
+- academic_month
+- academic_year
+
+Unnecessary indexes shall be avoided to reduce storage and write overhead.
+
+---
+
+# 4.205 Query Performance
+
+Database queries shall:
+
+- Select only required columns.
+- Avoid unnecessary joins.
+- Use indexes appropriately.
+- Avoid N+1 query patterns.
+- Use pagination where appropriate.
+- Use aggregation efficiently.
+- Avoid loading an entire group when only summary data is required.
+
+---
+
+# 4.206 Pagination
+
+Pagination shall be used for potentially large datasets.
+
+Examples:
+
+- Activity Logs
+- Notifications
+- Students
+- Certificates
+- Historical Transactions
+
+The frontend shall not load unlimited historical records in a single request.
+
+---
+
+# 4.207 Database Backup
+
+Database backups shall be enabled according to the capabilities of the selected hosting provider.
+
+The application architecture shall support future automated backups.
+
+Critical data shall never depend exclusively on browser storage.
+
+---
+
+# 4.208 Recovery
+
+The system shall be designed so that the database can be restored without requiring reconstruction from frontend data.
+
+Source data shall remain centralized in PostgreSQL.
+
+---
+
+# 4.209 Environment Separation
+
+The project shall support separate environments where practical:
+
+- Development
+- Production
+
+Environment-specific credentials shall never be hardcoded into source code.
+
+---
+
+# 4.210 Secrets
+
+The following shall never be committed to GitHub:
+
+- Database passwords
+- Supabase service-role keys
+- Private API keys
+- Authentication secrets
+- Telegram bot tokens
+- Other private credentials
+
+Secrets shall be stored using environment variables.
+
+---
+
+# 4.211 Database Migrations
+
+Database structure changes shall be managed through migrations.
+
+Manual production database modifications shall be avoided.
+
+Every structural change shall be reproducible.
+
+Examples:
+
+- Create Table
+- Add Column
+- Add Index
+- Add Constraint
+- Modify Policy
+
+---
+
+# 4.212 Migration Safety
+
+Database migrations shall:
+
+- Be version controlled.
+- Be tested before production.
+- Avoid unnecessary destructive operations.
+- Preserve existing data.
+- Include rollback considerations where possible.
+
+---
+
+# 4.213 Free Infrastructure Requirement
+
+The database architecture shall prioritize free or open-source infrastructure.
+
+The initial system shall not require:
+
+- Paid database services
+- Paid analytics services
+- Paid authentication services
+- Paid file-processing APIs
+- Paid third-party gamification APIs
+
+The architecture shall remain compatible with free-tier Supabase where practical.
+
+---
+
+# 4.214 Scalability Requirement
+
+The initial system shall support approximately:
+
+Up to 20 teachers
+
+Each teacher may have:
+
+- Multiple groups
+- Multiple students
+- Multiple lessons
+- Multiple homework tasks
+- Large historical records
+
+The database shall be designed so that this scale can be handled without unnecessary complexity.
+
+---
+
+# 4.215 Lightweight Architecture
+
+The database architecture shall remain lightweight.
+
+The project shall avoid unnecessary services such as:
+
+- Separate analytics databases
+- Separate cache servers
+- Message queues
+- Microservices
+- Complex infrastructure
+
+unless future scale demonstrates a real need.
+
+---
+
+# 4.216 Database Monitoring
+
+The system should monitor:
+
+- Query performance
+- Failed queries
+- Database errors
+- Storage usage
+- Authentication errors
+- RLS errors
+
+Monitoring shall use free or built-in tools where possible.
+
+---
+
+# 4.217 Data Consistency
+
+The following data must remain synchronized:
+
+Attendance
+
+↓
+
+Points
+
+↓
+
+XP
+
+↓
+
+Levels
+
+↓
+
+Achievements
+
+↓
+
+Analytics
+
+Changes shall be propagated through reliable application logic and database transactions.
+
+---
+
+# 4.218 Source of Truth
+
+The authoritative source of truth shall be the normalized PostgreSQL database.
+
+The following shall NOT be treated as the primary source of truth:
+
+- Browser localStorage
+- Frontend state
+- Cached analytics
+- Exported Excel files
+- Downloaded reports
+
+---
+
+# 4.219 Offline Data
+
+The application may use temporary browser caching to improve performance.
+
+However:
+
+Temporary browser data shall never overwrite authoritative database data without explicit synchronization logic.
+
+---
+
+# 4.220 Database Documentation
+
+Every production database table shall be documented.
+
+Documentation should include:
+
+- Table Purpose
+- Columns
+- Data Types
+- Relationships
+- Constraints
+- Indexes
+- RLS Policies
+
+---
+
+# 4.221 Naming Convention
+
+Database naming shall use:
+
+snake_case
+
+Examples:
+
+teacher_profiles
+
+student_levels
+
+point_transactions
+
+monthly_statistics
+
+activity_logs
+
+Table and column names shall remain consistent throughout the project.
+
+---
+
+# 4.222 Timestamp Standard
+
+All database timestamps shall use a consistent timezone-aware format.
+
+Recommended:
+
+PostgreSQL TIMESTAMPTZ
+
+The application shall display dates and times according to the teacher's local timezone.
+
+---
+
+# 4.223 Database Error Handling
+
+Database errors shall:
+
+- Be logged safely.
+- Not expose sensitive database information to users.
+- Return understandable messages to the frontend.
+- Preserve database consistency.
+
+Raw database error messages shall not be displayed directly to teachers.
+
+---
+
+# 4.224 Final Database Architecture
+
+The final database architecture shall contain logical modules for:
+
+### Authentication
+
+- teacher_profiles
+- teacher_settings
+
+### Academic Management
+
+- groups
+- students
+- lessons
+- attendance
+- homework_templates
+- lesson_homework
+- homework_progress
+- teacher_notes
+
+### Gamification
+
+- transactions
+- student_levels
+- badge_definitions
+- student_badges
+- achievement_definitions
+- student_achievements
+- achievement_progress
+- achievement_timeline
+- student_streaks
+- birthday_rewards
+- leaderboards
+
+### Payments
+
+- payments
+- payment_history
+
+### Certificates
+
+- certificate_templates
+- certificates
+- certificate_history
+- certificate_placeholders
+
+### Analytics
+
+- weekly_statistics
+- monthly_statistics
+- group_statistics
+- dashboard_cache
+- student_performance_trends
+- class_heatmap_data
+- student_attention_indicators
+- report_snapshots
+
+### Activity & Notifications
+
+- activity_logs
+- audit_logs
+- notifications
+- system_events
+
+### Import & Export
+
+- import_jobs
+- export_jobs
+- file_metadata
+
+---
+
+# 4.225 Final Acceptance Criteria
+
+The complete database system shall be considered ready when:
+
+- All required tables are implemented.
+- Relationships are correctly configured.
+- Foreign keys are enforced.
+- RLS is enabled.
+- Teacher data isolation works correctly.
+- Duplicate records are prevented.
+- Historical data is preserved.
+- Point and XP transactions are traceable.
+- Analytics can be regenerated from source data.
+- Activity logs are recorded.
+- Audit logs are immutable.
+- Notifications work correctly.
+- Bulk imports work safely.
+- Exports work correctly.
+- File ownership is enforced.
+- Database migrations are version controlled.
+- Secrets are not stored in the repository.
+- Database queries are optimized.
+- The system can support approximately 20 teachers.
+- The architecture remains lightweight.
+- The initial deployment can operate using free-tier infrastructure.
+
+---
+
+# 4.226 Final Database Principle
+
+The database shall follow this principle:
+
+SOURCE DATA FIRST.
+
+DERIVED DATA SECOND.
+
+CACHE LAST.
+
+All important historical information shall remain recoverable from authoritative source records.
+
+Performance optimizations shall never compromise data integrity.
+
+Security shall be enforced at the database level.
+
+The database shall remain simple, maintainable, lightweight, and scalable.
+
+---
+
+**End of Part 4 – Section 10**
+
+**End of Part 4 – Database Requirements**
+
+# Part 5 — Analytics & Reports
+
+---
+
+# 5.0 Purpose
+
+This part defines the requirements for analytics, statistics, rankings, weekly reports, monthly reports, student performance analysis, group performance analysis, and Telegram reporting.
+
+The analytics system shall provide teachers with clear, fast, and actionable information about their groups and students.
+
+Analytics shall be designed for teacher use rather than center-wide administration.
+
+Teachers shall only see statistics belonging to their own groups and students.
+
+---
+
+# 5.1 Analytics Principles
+
+The analytics system shall follow these principles:
+
+- Simple
+- Fast
+- Accurate
+- Lightweight
+- Easy to understand
+- Historically persistent
+- Teacher-focused
+- Mobile-compatible where practical
+- Desktop-optimized
+
+Analytics shall not require teachers to manually calculate statistics.
+
+---
+
+# 5.2 Analytics Dashboard
+
+Each group shall have an analytics dashboard.
+
+The dashboard shall provide an overview of:
+
+- Total Students
+- Active Students
+- Attendance
+- Late Students
+- Excused Absences
+- Unexcused Absences
+- Homework Completion
+- Homework Missing
+- Payment Status
+- Total Group Points
+- Average Points
+- Average XP
+- Current Ranking
+- Badges
+- Achievements
+- Streaks
+- Certificates
+
+---
+
+# 5.3 Weekly Analytics
+
+The system shall automatically generate weekly statistics.
+
+Weekly analytics shall include:
+
+- Attendance Rate
+- Homework Completion Rate
+- Homework Missing Rate
+- Weekly Points
+- Weekly XP
+- Ranking
+- Ranking Changes
+- Payment Status
+- Badges Earned
+- Achievements Earned
+- Streak Information
+
+Teachers shall be able to select a specific week.
+
+---
+
+# 5.4 Monthly Analytics
+
+The system shall automatically generate monthly statistics.
+
+Monthly analytics shall include:
+
+- Attendance Rate
+- Homework Completion Rate
+- Homework Missing Rate
+- Monthly Points
+- Monthly XP
+- Ranking
+- Ranking Changes
+- Payment Status
+- Badges Earned
+- Achievements Earned
+- Certificates
+- Streaks
+- Performance Trends
+
+Monthly analytics shall remain available historically.
+
+---
+
+# 5.5 Attendance Analytics
+
+Attendance analytics shall distinguish between:
+
+- Present
+- Late
+- Excused Absence
+- Unexcused Absence
+
+The system shall calculate:
+
+Attendance Rate
+
+Excused Absence Rate
+
+Unexcused Absence Rate
+
+Late Rate
+
+---
+
+# 5.6 Attendance Calculation
+
+Attendance Rate shall be calculated using:
+
+Present Lessons / Total Lessons × 100
+
+Late attendance shall be handled according to the configured attendance rules.
+
+Teachers shall be able to see both:
+
+- Raw attendance records
+- Calculated attendance percentage
+
+---
+
+# 5.7 Homework Analytics
+
+Homework analytics shall include:
+
+- Perfect
+- Completed
+- Partial
+- Missing
+- Excused
+
+The system shall calculate:
+
+Homework Completion Rate
+
+Perfect Homework Rate
+
+Missing Homework Rate
+
+---
+
+# 5.8 Homework Performance
+
+The system shall identify:
+
+- Students with consistently completed homework
+- Students with incomplete homework
+- Students with repeated missing homework
+- Students with Perfect homework streaks
+
+These indicators shall help teachers identify students requiring additional attention.
+
+---
+
+# 5.9 Payment Analytics
+
+Payment analytics shall include:
+
+- Paid
+- Pending
+- Late
+
+The system shall display:
+
+- Number of Paid Students
+- Number of Pending Students
+- Number of Late Students
+- Payment Completion Rate
+- Payment Trend
+
+Payment statistics shall be shown only for the teacher's own groups.
+
+---
+
+# 5.10 Points Analytics
+
+Points analytics shall include:
+
+- Total Points
+- Weekly Points
+- Monthly Points
+- Points Earned
+- Points Deducted
+- Average Points
+- Point Change
+
+Teachers shall be able to identify which activities contribute most to student progress.
+
+---
+
+# 5.11 XP Analytics
+
+XP analytics shall include:
+
+- Current XP
+- Weekly XP
+- Monthly XP
+- XP Progress
+- Current Level
+- Level Progress
+
+XP shall be separate from normal point totals.
+
+---
+
+# 5.12 Ranking Analytics
+
+The system shall provide:
+
+- Current Ranking
+- Weekly Ranking
+- Monthly Ranking
+- Ranking Change
+
+Example:
+
+Previous Rank:
+
+5
+
+Current Rank:
+
+3
+
+Change:
+
++2
+
+Ranking shall be calculated using the configured ranking rules.
+
+---
+
+# 5.13 Ranking Tie Rules
+
+If two or more students have the same ranking score, the system shall use a deterministic tie-breaking mechanism.
+
+Recommended priority:
+
+1. Total Points
+2. XP
+3. Attendance Rate
+4. Homework Completion Rate
+
+The same input data shall always produce the same ranking.
+
+---
+
+# 5.14 Student Performance Overview
+
+Each student shall have a performance overview.
+
+The overview shall display:
+
+- Total Points
+- XP
+- Level
+- Attendance
+- Homework
+- Payment Status
+- Rank
+- Badges
+- Achievements
+- Streak
+- Certificates
+- Performance Trend
+
+---
+
+# 5.15 Student Strength Indicators
+
+The system shall identify areas in which a student performs strongly.
+
+Examples:
+
+- Excellent Attendance
+- Strong Homework Performance
+- High Point Growth
+- Strong Payment Consistency
+- Long Attendance Streak
+- Perfect Homework Streak
+
+These indicators shall be generated from objective application data.
+
+---
+
+# 5.16 Student Weakness Indicators
+
+The system shall identify areas where improvement may be needed.
+
+Examples:
+
+- Frequent Absence
+- Frequent Late Attendance
+- Repeated Missing Homework
+- Declining Points
+- Declining Homework Completion
+- Declining Attendance
+
+These indicators shall be informational and intended to help teachers.
+
+---
+
+# 5.17 Performance Trend
+
+The system shall compare performance across periods.
+
+Examples:
+
+Current Month vs Previous Month
+
+Current Week vs Previous Week
+
+Possible trend results:
+
+- Improving
+- Stable
+- Declining
+
+---
+
+# 5.18 Class Heatmap
+
+Each group shall have a classroom heatmap.
+
+The heatmap may visualize:
+
+- Attendance
+- Late Attendance
+- Absence
+- Homework Completion
+- Points
+
+The teacher shall be able to identify high-activity and low-activity periods quickly.
+
+---
+
+# 5.19 Streak Analytics
+
+The system shall display active and historical streaks.
+
+Supported streak types:
+
+- Attendance Streak
+- Homework Streak
+- Perfect Homework Streak
+- Payment Streak
+- Perfect Attendance Streak
+
+The system shall display:
+
+- Current Streak
+- Longest Streak
+- Streak Start Date
+- Last Activity
+
+---
+
+# 5.20 Birthday Analytics
+
+The system shall track:
+
+- Upcoming Birthdays
+- Birthday Rewards Given
+- Birthday Reward History
+
+Birthday rewards shall appear in the student's achievement history.
+
+---
+
+# 5.21 Badge Analytics
+
+Teachers shall be able to view:
+
+- Total Badges Earned
+- Most Common Badges
+- Recently Earned Badges
+- Student Badge Collection
+
+---
+
+# 5.22 Achievement Analytics
+
+Teachers shall be able to view:
+
+- Completed Achievements
+- In-progress Achievements
+- Locked Achievements
+- Recently Unlocked Achievements
+
+Achievement progress shall update automatically.
+
+---
+
+# 5.23 Achievement Timeline
+
+Each student shall have an achievement timeline.
+
+Timeline events may include:
+
+- Badge Earned
+- Achievement Unlocked
+- Level Up
+- Birthday Reward
+- Certificate
+- Major Point Reward
+- Homework Milestone
+- Attendance Milestone
+
+The timeline shall be chronological.
+
+---
+
+# 5.24 Weekly Best Students
+
+The system shall identify weekly top-performing students.
+
+Ranking may consider:
+
+- Weekly Points
+- XP
+- Attendance
+- Homework Completion
+
+The exact ranking formula shall follow the configured gamification rules.
+
+---
+
+# 5.25 Monthly Best Students
+
+The system shall identify monthly top-performing students.
+
+The system shall preserve monthly ranking history.
+
+Monthly winners may be eligible for certificate generation.
+
+---
+
+# 5.26 Certificate Eligibility
+
+The system shall allow teachers to configure certificate eligibility rules.
+
+Possible rules:
+
+- 1st Place
+- 2nd Place
+- 3rd Place
+- Top 5
+- Top 10
+- Highest Attendance
+- Best Homework
+- Most Improved
+- Custom Achievement
+
+The teacher shall be able to select the certificate template.
+
+---
+
+# 5.27 Report Types
+
+The system shall support:
+
+- Weekly Group Report
+- Monthly Group Report
+- Student Performance Report
+- Attendance Report
+- Homework Report
+- Payment Report
+- Points Report
+- Ranking Report
+- Gamification Report
+- Full Group Report
+
+---
+
+# 5.28 Weekly Group Report
+
+The weekly report shall contain:
+
+- Group Name
+- Week
+- Student Count
+- Attendance Summary
+- Homework Summary
+- Payment Summary
+- Top Students
+- Ranking Changes
+- Points Summary
+- XP Summary
+- Achievements
+- Badges
+
+---
+
+# 5.29 Monthly Group Report
+
+The monthly report shall contain:
+
+- Group Name
+- Month
+- Student Count
+- Total Lessons
+- Attendance Statistics
+- Homework Statistics
+- Payment Statistics
+- Points Statistics
+- XP Statistics
+- Rankings
+- Badges
+- Achievements
+- Certificates
+- Performance Trends
+
+---
+
+# 5.30 Student Report
+
+The student report shall contain:
+
+- Student Name
+- Group
+- Attendance
+- Homework
+- Payment Status
+- Total Points
+- XP
+- Level
+- Rank
+- Badges
+- Achievements
+- Streaks
+- Strength Indicators
+- Improvement Indicators
+
+---
+
+# 5.31 Report Filters
+
+Reports shall support filtering by:
+
+- Group
+- Student
+- Week
+- Month
+- Date Range
+
+Filters shall update the displayed statistics without reloading unnecessary application data.
+
+---
+
+# 5.32 Search
+
+Global search shall support:
+
+- Student Name
+- Phone Number
+- Group Name
+- Payment Number
+- Certificate Number
+
+Search results shall respect teacher ownership.
+
+---
+
+# 5.33 Telegram Reporting
+
+The system shall support sending selected statistics to a Telegram group.
+
+Student login shall not be required.
+
+Telegram reporting shall be controlled by the teacher.
+
+Possible Telegram reports:
+
+- Weekly Top Students
+- Monthly Top Students
+- Attendance Summary
+- Homework Summary
+- Ranking
+- Achievements
+- Certificates
+- Group Statistics
+
+---
+
+# 5.34 Telegram Report Format
+
+Telegram reports shall be concise and readable.
+
+Example structure:
+
+Group Name
+
+Week: [Date Range]
+
+Top Students:
+
+1. Student A — 185 points
+2. Student B — 170 points
+3. Student C — 155 points
+
+Attendance:
+
+Present: XX%
+
+Late: XX%
+
+Absent: XX%
+
+Homework:
+
+Completed: XX%
+
+Missing: XX%
+
+The exact visual formatting shall be configurable.
+
+---
+
+# 5.35 Excel / Spreadsheet Export
+
+Teachers shall be able to export statistics.
+
+Primary format:
+
+XLSX
+
+Possible exported information:
+
+- Student List
+- Attendance
+- Homework
+- Payments
+- Points
+- XP
+- Rankings
+- Weekly Reports
+- Monthly Reports
+
+Exported data shall preserve useful column names and readable formatting.
+
+---
+
+# 5.36 PDF Reports
+
+Where supported, teachers shall be able to generate PDF reports.
+
+PDF reports may include:
+
+- Group Summary
+- Student Summary
+- Monthly Report
+- Weekly Report
+- Certificate-related reports
+
+PDF generation shall not affect database records.
+
+---
+
+# 5.37 Analytics Refresh
+
+Analytics shall update after relevant changes.
+
+Examples:
+
+Attendance Changed
+
+→ Attendance Statistics Updated
+
+Homework Evaluated
+
+→ Homework Statistics Updated
+
+Payment Changed
+
+→ Payment Statistics Updated
+
+Points Changed
+
+→ Ranking Updated
+
+Badge Awarded
+
+→ Achievement Statistics Updated
+
+---
+
+# 5.38 Historical Analytics
+
+Historical statistics shall remain accessible.
+
+Teachers shall be able to compare:
+
+- Previous Month
+- Current Month
+- Previous Week
+- Current Week
+
+Historical statistics shall not be overwritten by new periods.
+
+---
+
+# 5.39 Dashboard Performance
+
+Analytics dashboards shall load quickly.
+
+The application shall:
+
+- Avoid unnecessary calculations
+- Use indexed database queries
+- Use cached derived data when beneficial
+- Load data progressively where appropriate
+- Avoid loading unnecessary historical records
+
+---
+
+# 5.40 Data Accuracy
+
+Analytics shall be based on authoritative source data.
+
+Primary sources include:
+
+- Attendance
+- Homework
+- Payments
+- Transactions
+- Lessons
+- Students
+
+Cached analytics shall never become the only source of truth.
+
+---
+
+# 5.41 Teacher Data Isolation
+
+Analytics shall only include data belonging to the authenticated teacher.
+
+A teacher shall never see:
+
+- Another teacher's students
+- Another teacher's groups
+- Another teacher's rankings
+- Another teacher's reports
+- Another teacher's analytics
+
+---
+
+# 5.42 Analytics Privacy
+
+The system shall not expose unnecessary personal information.
+
+Reports shall only contain information required for the selected report type.
+
+Teacher notes shall never be included in public or Telegram reports unless explicitly selected by the teacher.
+
+---
+
+# 5.43 Report History
+
+Generated reports may be stored in the system.
+
+Stored report metadata shall include:
+
+- Report Type
+- Group
+- Period
+- Generated Date
+- File Format
+
+Historical reports shall remain associated with the teacher.
+
+---
+
+# 5.44 Analytics Acceptance Criteria
+
+The Analytics & Reports system shall be considered complete when:
+
+- Weekly statistics work correctly.
+- Monthly statistics work correctly.
+- Student statistics work correctly.
+- Group statistics work correctly.
+- Attendance analytics are accurate.
+- Homework analytics are accurate.
+- Payment analytics are accurate.
+- Points and XP analytics are accurate.
+- Rankings are deterministic.
+- Strength and improvement indicators work.
+- Heatmap data is available.
+- Streak data is available.
+- Achievement timelines work.
+- Weekly and monthly winners can be identified.
+- Certificate eligibility can be determined.
+- Reports can be filtered.
+- XLSX exports work.
+- PDF reports work where implemented.
+- Telegram reports can be generated.
+- Historical analytics remain available.
+- Teacher data isolation is enforced.
+
+---
+
+# 5.45 Performance Acceptance Criteria
+
+For normal group sizes, analytics pages should load without noticeable delay.
+
+The application shall avoid:
+
+- Full-table scans where indexes are available
+- Unnecessary repeated queries
+- Loading all historical records at once
+- Excessive client-side calculations
+- Large unnecessary API responses
+
+The system shall prioritize speed and reliability over unnecessary visual complexity.
+
+---
+
+# 5.46 AI Implementation Notes
+
+Implementation shall:
+
+- Use PostgreSQL for authoritative data.
+- Use efficient SQL aggregation.
+- Use indexed queries.
+- Use cached analytics where beneficial.
+- Avoid unnecessary third-party analytics services.
+- Avoid paid analytics APIs.
+- Keep analytics processing lightweight.
+- Preserve historical statistics.
+- Keep teacher data isolated.
+- Support approximately 20 teachers.
+- Use free and open-source technologies whenever possible.
+- Follow SOLID principles.
+- Maintain production-quality architecture.
+
+---
+
+# 5.47 Final Principle
+
+The analytics system exists to help teachers answer three questions quickly:
+
+1. How is my group performing?
+2. Which students are performing well?
+3. Which students may need additional attention?
+
+The interface shall prioritize clarity, actionable information, and speed rather than excessive charts or visual complexity.
+
+---
+
+**End of Part 5 – Analytics & Reports**
+
+# Part 6 — UI Requirements
+
+---
+
+# 6.0 Purpose
+
+This part defines the user interface, user experience, navigation, layout, responsive behavior, accessibility, localization, visual design, and performance requirements of the application.
+
+The UI shall prioritize:
+
+- Simplicity
+- Speed
+- Clarity
+- Reliability
+- Ease of use
+- Low resource consumption
+- Fast interaction
+- Minimal visual complexity
+
+The application is a teacher-focused management and gamification system.
+
+---
+
+# 6.1 General UI Principles
+
+The interface shall be:
+
+- Clean
+- Minimal
+- Professional
+- Lightweight
+- Consistent
+- Easy to learn
+- Fast to navigate
+
+The application shall avoid unnecessary visual elements.
+
+The UI shall not contain:
+
+- Unnecessary animations
+- Heavy backgrounds
+- Large decorative graphics
+- Video backgrounds
+- Unnecessary 3D elements
+- Excessive gradients
+- Unnecessary third-party widgets
+
+---
+
+# 6.2 Logo and Branding
+
+The application shall not require a large or visually dominant logo.
+
+The interface shall use a simple application identity.
+
+Branding shall not negatively affect:
+
+- Loading speed
+- Layout clarity
+- Screen space
+- Mobile usability
+
+---
+
+# 6.3 Color System
+
+The application shall use a consistent color system.
+
+Colors shall communicate meaning clearly.
+
+Recommended semantic colors:
+
+- Green — Success / Present / Completed
+- Red — Error / Unexcused Absence / Negative
+- Yellow — Warning / Late / Pending
+- Blue — Information / Neutral Action
+- Gray — Disabled / Secondary Information
+
+Colors shall not be the only method of communicating status.
+
+Text, icons, or labels shall also communicate important states.
+
+---
+
+# 6.4 Typography
+
+The application shall use a lightweight, readable font.
+
+Typography shall prioritize:
+
+- Readability
+- Fast loading
+- Clear hierarchy
+- Consistent sizing
+
+The application shall avoid loading multiple unnecessary font families.
+
+Font weights shall be limited to the minimum required.
+
+---
+
+# 6.5 Language Support
+
+The application shall support:
+
+- Uzbek
+- English
+
+Users shall be able to switch between languages.
+
+The selected language shall be saved for the teacher account.
+
+---
+
+# 6.6 Localization
+
+All user-facing text shall use localization keys.
+
+Hardcoded interface text shall be avoided where localization is required.
+
+Examples:
+
+- Buttons
+- Menus
+- Notifications
+- Errors
+- Status labels
+- Reports
+- Dashboard text
+- Settings
+
+Changing the language shall not require reloading the entire application where technically unnecessary.
+
+---
+
+# 6.7 Authentication Screen
+
+The login screen shall remain simple.
+
+Required elements:
+
+- Email / Username
+- Password
+- Login Button
+- Language Selector
+
+Optional:
+
+- Remember Session
+
+The login page shall not contain unnecessary graphics.
+
+---
+
+# 6.8 Teacher Dashboard
+
+After login, the teacher shall see a dashboard containing:
+
+- Teacher Information
+- Groups
+- Today's Lessons
+- Attendance Summary
+- Homework Summary
+- Payment Summary
+- Top Students
+- Recent Achievements
+- Recent Activity
+
+The dashboard shall provide quick access to groups.
+
+---
+
+# 6.9 Main Navigation
+
+The application shall provide simple navigation.
+
+Recommended navigation:
+
+- Dashboard
+- Groups
+- Journal
+- Students
+- Analytics
+- Gamification
+- Reports
+- Certificates
+- Activity
+- Settings
+
+Navigation items shall only appear where relevant.
+
+---
+
+# 6.10 Group Management
+
+The Groups page shall display:
+
+- Group Name
+- Student Count
+- Schedule
+- Current Level / Status
+- Quick Actions
+
+Teachers shall be able to:
+
+- Create Group
+- Edit Group
+- Archive Group
+- Open Group
+- View Statistics
+
+---
+
+# 6.11 Group Page
+
+Each group page shall provide access to:
+
+- Journal
+- Students
+- Attendance
+- Homework
+- Payments
+- Gamification
+- Analytics
+- Reports
+- Certificates
+- Activity
+
+The teacher shall not need to navigate through multiple unrelated pages to manage a group.
+
+---
+
+# 6.12 Dynamic Journal UI
+
+The Journal shall be the primary working interface for daily teaching operations.
+
+The Journal shall display:
+
+- Student Rows
+- Lesson Columns
+- Attendance
+- Homework
+- Points
+- Relevant statuses
+
+The Journal shall support horizontal scrolling where required.
+
+Student names shall remain visible while scrolling horizontally where technically practical.
+
+---
+
+# 6.13 Journal Interaction
+
+Teachers shall be able to perform common actions quickly.
+
+Examples:
+
+- Mark Present
+- Mark Late
+- Mark Excused
+- Mark Absent
+- Add Homework
+- Evaluate Homework
+- Add Points
+- Add Note
+
+Actions shall require minimal clicks.
+
+---
+
+# 6.14 Journal Status Colors
+
+Attendance and homework statuses shall have clear visual indicators.
+
+Example:
+
+Present → Green
+
+Late → Yellow
+
+Excused → Blue
+
+Absent → Red
+
+Completed → Green
+
+Missing → Red
+
+Pending → Yellow
+
+The UI shall also display text or icons where appropriate.
+
+---
+
+# 6.15 Journal Sticky Headers
+
+The Journal should support:
+
+- Sticky student column
+- Sticky lesson header
+- Sticky date row
+
+This shall improve usability when a group contains many students or lessons.
+
+---
+
+# 6.16 Student Profile UI
+
+Each student profile shall contain:
+
+- Student Name
+- Group
+- Contact Information
+- Attendance
+- Homework
+- Points
+- XP
+- Level
+- Rank
+- Badges
+- Achievements
+- Streaks
+- Certificates
+- Teacher Notes
+- Achievement Timeline
+- Activity
+
+The profile shall provide a clear summary before detailed information.
+
+---
+
+# 6.17 Teacher Notes
+
+Teachers shall be able to create notes for individual students.
+
+Notes shall support:
+
+- Create
+- Edit
+- View
+- Archive
+
+Notes shall remain private to the teacher.
+
+Teacher notes shall not automatically appear in:
+
+- Telegram Reports
+- Public Reports
+- Student-facing interfaces
+
+---
+
+# 6.18 Achievement Timeline UI
+
+The student profile shall include an achievement timeline.
+
+Timeline items may include:
+
+- Badge Earned
+- Achievement Unlocked
+- Level Up
+- Certificate
+- Birthday Reward
+- Attendance Milestone
+- Homework Milestone
+- Major Reward
+
+Timeline entries shall be displayed chronologically.
+
+---
+
+# 6.19 Gamification UI
+
+The Gamification section shall display:
+
+- Current Level
+- XP
+- Points
+- Rank
+- Badges
+- Achievements
+- Streaks
+- Recent Rewards
+
+Progress indicators shall be visually simple.
+
+---
+
+# 6.20 Leaderboard UI
+
+The leaderboard shall display:
+
+- Rank
+- Student
+- Points
+- XP
+- Level
+
+The teacher shall be able to switch between:
+
+- Weekly
+- Monthly
+- Overall
+
+The leaderboard shall use a clear table or compact list.
+
+---
+
+# 6.21 Analytics UI
+
+Analytics shall prioritize information over decoration.
+
+Possible components:
+
+- Summary Cards
+- Tables
+- Simple Charts
+- Progress Indicators
+- Heatmaps
+- Ranking Lists
+- Trend Indicators
+
+Charts shall only be used where they improve understanding.
+
+---
+
+# 6.22 Analytics Filters
+
+Analytics pages shall support:
+
+- Group
+- Student
+- Week
+- Month
+- Date Range
+
+Filters shall be easy to access.
+
+---
+
+# 6.23 Reports UI
+
+The Reports page shall provide:
+
+- Report Type
+- Group
+- Period
+- Generate
+- Preview
+- Export
+
+Available formats shall include where implemented:
+
+- XLSX
+- CSV
+- PDF
+
+---
+
+# 6.24 Certificate UI
+
+The Certificate section shall provide:
+
+- Certificate Templates
+- Upload Template
+- Template Preview
+- Select Student
+- Generate Certificate
+- Certificate History
+
+AI-generated certificates shall not be required.
+
+Certificates shall use predefined teacher-selected templates.
+
+---
+
+# 6.25 Activity UI
+
+The Activity page shall display a chronological activity log.
+
+Teachers shall be able to filter by:
+
+- Date
+- Group
+- Student
+- Module
+- Action
+
+Recent activity may also appear on the Dashboard.
+
+---
+
+# 6.26 Notifications UI
+
+The application shall provide a lightweight notification system.
+
+Notifications shall support:
+
+- Unread
+- Read
+- Mark as Read
+- Timestamp
+
+The notification interface shall not require a heavy notification service.
+
+---
+
+# 6.27 Settings UI
+
+Settings shall include:
+
+- Language
+- Teacher Profile
+- Group Settings
+- Gamification Settings
+- Notification Settings
+- Telegram Settings
+- Certificate Settings
+
+Only relevant settings shall be displayed.
+
+---
+
+# 6.28 Loading States
+
+Every data-dependent UI component shall have an appropriate loading state.
+
+The application shall use:
+
+- Skeletons
+- Small spinners
+- Disabled states
+
+Loading indicators shall be lightweight.
+
+The UI shall never appear frozen without feedback.
+
+---
+
+# 6.29 Empty States
+
+Empty pages shall display useful information.
+
+Examples:
+
+No Groups
+
+"Create your first group."
+
+No Students
+
+"Add students to this group."
+
+No Homework
+
+"No homework has been assigned yet."
+
+Empty states shall provide an appropriate action where possible.
+
+---
+
+# 6.30 Error States
+
+Errors shall be:
+
+- Clear
+- Short
+- Understandable
+- Actionable
+
+Example:
+
+"Unable to save attendance. Please try again."
+
+The application shall not expose:
+
+- SQL errors
+- Stack traces
+- API secrets
+- Internal implementation details
+
+---
+
+# 6.31 Confirmation Dialogs
+
+Confirmation dialogs shall be used for potentially destructive actions.
+
+Examples:
+
+- Archive Group
+- Archive Student
+- Delete Template
+- Revoke Certificate
+
+Routine actions shall not require unnecessary confirmation.
+
+---
+
+# 6.32 Toast Messages
+
+Short actions may use lightweight toast notifications.
+
+Examples:
+
+"Attendance saved."
+
+"Homework updated."
+
+"Badge awarded."
+
+"Student added."
+
+Toasts shall disappear automatically.
+
+---
+
+# 6.33 Responsive Design
+
+The application shall support:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+Desktop shall be the primary target.
+
+The Journal shall receive special responsive treatment because it may contain many columns.
+
+---
+
+# 6.34 Mobile UI
+
+On small screens:
+
+- Navigation may collapse.
+- Tables may become horizontally scrollable.
+- Secondary information may be hidden behind expandable sections.
+- Large dashboards may become stacked cards.
+
+The application shall remain functional without requiring desktop-only controls.
+
+---
+
+# 6.35 Accessibility
+
+The UI shall follow basic accessibility principles.
+
+Requirements:
+
+- Keyboard navigation
+- Visible focus states
+- Sufficient text contrast
+- Descriptive button labels
+- Accessible form labels
+- Status information not dependent only on color
+
+---
+
+# 6.36 Interaction Speed
+
+Common teacher actions shall require minimal interaction.
+
+High-frequency actions include:
+
+- Attendance
+- Homework
+- Points
+- Student selection
+- Lesson selection
+
+These actions shall be optimized for speed.
+
+---
+
+# 6.37 Optimistic UI
+
+Optimistic UI may be used for safe operations where appropriate.
+
+Example:
+
+Teacher marks a student Present.
+
+↓
+
+UI immediately displays Present.
+
+↓
+
+Database request is processed.
+
+↓
+
+If request fails, UI reverts and displays an error.
+
+Optimistic updates shall not be used where they could cause data corruption.
+
+---
+
+# 6.38 Autosave
+
+Autosave may be used for appropriate fields.
+
+Autosave shall:
+
+- Avoid excessive database requests.
+- Provide save feedback.
+- Prevent accidental data loss.
+
+Critical operations shall still have explicit confirmation where appropriate.
+
+---
+
+# 6.39 Modal Usage
+
+Modals shall be used sparingly.
+
+They may be used for:
+
+- Add Student
+- Edit Student
+- Add Homework
+- Award Badge
+- Generate Certificate
+- Confirmation
+
+Large workflows should use dedicated pages instead of oversized modals.
+
+---
+
+# 6.40 Design Consistency
+
+The application shall maintain consistent:
+
+- Buttons
+- Forms
+- Tables
+- Cards
+- Badges
+- Icons
+- Status indicators
+- Spacing
+- Typography
+
+Components shall be reusable.
+
+---
+
+# 6.41 Iconography
+
+Icons shall be lightweight.
+
+The application shall avoid loading large icon libraries when only a small number of icons are required.
+
+Icons shall support text labels rather than replacing important text completely.
+
+---
+
+# 6.42 Animation
+
+Animations shall be minimal.
+
+Allowed animations may include:
+
+- Small transitions
+- Toast appearance
+- Modal transitions
+- Loading indicators
+
+The application shall avoid:
+
+- Large entrance animations
+- Continuous animations
+- Decorative animations
+- Heavy motion effects
+
+---
+
+# 6.43 Performance-Oriented UI
+
+The UI shall prioritize performance.
+
+The application shall:
+
+- Lazy-load non-critical components.
+- Avoid unnecessary JavaScript.
+- Avoid unnecessary API requests.
+- Avoid rendering large datasets unnecessarily.
+- Paginate large lists.
+- Cache appropriate read-heavy data.
+- Minimize bundle size.
+- Compress static assets.
+
+---
+
+# 6.44 Lightweight Architecture
+
+The UI shall not depend on unnecessary third-party services.
+
+Preferred approach:
+
+- Open-source UI libraries where useful
+- Native browser APIs where practical
+- Lightweight components
+- Minimal dependencies
+
+Every dependency shall have a clear purpose.
+
+---
+
+# 6.45 Crash Prevention
+
+The UI shall handle unexpected failures gracefully.
+
+If a component fails:
+
+- The entire application should not crash.
+- A clear fallback state should be displayed.
+- The user should be able to continue using other parts of the application.
+
+Error boundaries shall be used where appropriate.
+
+---
+
+# 6.46 Data Loss Prevention
+
+The UI shall protect against accidental data loss.
+
+Examples:
+
+- Unsaved changes warning
+- Confirmation before destructive actions
+- Save status
+- Retry after failed requests
+
+---
+
+# 6.47 Session Handling
+
+The application shall maintain authenticated sessions securely.
+
+If a session expires:
+
+- The user shall be informed.
+- Unsaved data should be protected where possible.
+- The application shall redirect to login when necessary.
+
+---
+
+# 6.48 UI Security
+
+The frontend shall never be considered the primary security layer.
+
+Security shall be enforced by:
+
+- Authentication
+- Authorization
+- Row Level Security
+- Backend validation
+
+The UI shall only display data returned for the authenticated teacher.
+
+---
+
+# 6.49 Browser Compatibility
+
+The application shall support modern versions of:
+
+- Chrome
+- Edge
+- Safari
+- Firefox
+
+The application shall not require obsolete browser technologies.
+
+---
+
+# 6.50 Performance Acceptance Criteria
+
+The UI shall be considered performance-ready when:
+
+- Initial pages load quickly.
+- Navigation feels responsive.
+- Common actions respond immediately.
+- Large groups remain usable.
+- Journal scrolling remains smooth.
+- Analytics do not freeze the interface.
+- Heavy components are loaded only when needed.
+- Unnecessary network requests are avoided.
+
+---
+
+# 6.51 UI Acceptance Criteria
+
+The UI shall be considered complete when:
+
+- Uzbek and English languages work.
+- Teacher login works.
+- Dashboard works.
+- Group management works.
+- Journal works.
+- Student profiles work.
+- Teacher Notes work.
+- Achievement Timeline works.
+- Gamification UI works.
+- Analytics UI works.
+- Reports UI works.
+- Certificate UI works.
+- Activity Log works.
+- Notifications work.
+- Settings work.
+- Responsive layouts work.
+- Loading states work.
+- Empty states work.
+- Error states work.
+- Accessibility basics are implemented.
+- Destructive actions have appropriate confirmation.
+- Teacher data is isolated.
+- The interface remains lightweight.
+
+---
+
+# 6.52 Final UI Principle
+
+The application shall follow one primary UI principle:
+
+FAST FIRST. SIMPLE SECOND. DECORATION LAST.
+
+The website is a productivity tool for teachers.
+
+The interface shall help teachers complete common classroom tasks quickly rather than prioritize visual complexity.
+
+The application shall remain lightweight, responsive, reliable, and easy to understand.
+
+---
+
+**End of Part 6 – UI Requirements**
+
+# Part 7 — Database Requirements
+
+---
+
+# 7.0 Purpose
+
+This part defines the database architecture, data model, relationships, integrity rules, security requirements, storage strategy, and performance requirements of the application.
+
+The database shall provide a reliable central source of truth for all teacher, group, student, academic, payment, gamification, analytics, certificate, activity, and system data.
+
+The database architecture shall prioritize:
+
+- Reliability
+- Data integrity
+- Security
+- Fast queries
+- Low infrastructure cost
+- Maintainability
+- Historical data preservation
+- Lightweight operation
+- Scalability for approximately 20 teachers
+
+---
+
+# 7.1 Primary Database
+
+The primary database shall use:
+
+PostgreSQL
+
+The preferred managed database platform is:
+
+Supabase PostgreSQL
+
+The architecture shall remain compatible with the free tier where practical.
+
+The initial application shall not require a paid database service.
+
+---
+
+# 7.2 Database as Source of Truth
+
+PostgreSQL shall be the authoritative source of application data.
+
+The following shall not be treated as the primary source of truth:
+
+- Browser localStorage
+- Frontend state
+- Cached analytics
+- Exported files
+- Telegram messages
+- Generated reports
+
+Cached and derived data shall always be recoverable from authoritative records.
+
+---
+
+# 7.3 Teacher Account Data
+
+The database shall store teacher account information required by the application.
+
+Teacher records shall include appropriate fields for:
+
+- Authentication identity
+- Display name
+- Language preference
+- Account status
+- Created date
+- Updated date
+
+Authentication credentials shall be handled by the authentication provider.
+
+Passwords shall never be stored directly by the application.
+
+---
+
+# 7.4 Teacher Ownership
+
+Each teacher shall have isolated application data.
+
+Teacher-owned records shall be associated with:
+
+teacher_id
+
+Teacher ownership shall apply to:
+
+- Groups
+- Students
+- Lessons
+- Attendance
+- Homework
+- Payments
+- Transactions
+- Gamification
+- Certificates
+- Analytics
+- Teacher Notes
+- Notifications
+- Activity Logs
+- Reports
+- Imported Files
+- Exported Files
+
+---
+
+# 7.5 Core Entities
+
+The database shall contain logical entities for:
+
+### Teacher
+
+Represents an authenticated teacher.
+
+### Group
+
+Represents a teacher's class or study group.
+
+### Student
+
+Represents a student belonging to a group.
+
+### Lesson
+
+Represents a lesson conducted for a group.
+
+### Attendance
+
+Represents a student's attendance status for a lesson.
+
+### Homework
+
+Represents homework assigned to students.
+
+### Payment
+
+Represents student payment records.
+
+### Transaction
+
+Represents points or XP changes.
+
+### Badge
+
+Represents a gamification badge.
+
+### Achievement
+
+Represents a gamification achievement.
+
+### Certificate
+
+Represents a generated certificate.
+
+### Analytics
+
+Represents derived statistical information.
+
+### Activity Log
+
+Represents teacher-facing activity history.
+
+---
+
+# 7.6 Core Relationships
+
+The primary relationship structure shall be:
+
+Teacher
+
+↓
+
+Groups
+
+↓
+
+Students
+
+↓
+
+Lessons
+
+↓
+
+Attendance
+
+↓
+
+Homework
+
+↓
+
+Gamification
+
+↓
+
+Analytics
+
+A teacher may have multiple groups.
+
+A group may have multiple students.
+
+A group may have multiple lessons.
+
+A student may have multiple attendance records.
+
+A student may have multiple homework records.
+
+A student may have multiple gamification records.
+
+---
+
+# 7.7 Academic Data Model
+
+The academic database shall support:
+
+- Groups
+- Students
+- Lessons
+- Attendance
+- Homework
+- Teacher Notes
+
+Academic records shall remain historically accessible.
+
+---
+
+# 7.8 Attendance Data
+
+Attendance shall support:
+
+- Present
+- Late
+- Excused
+- Unexcused
+
+Each attendance record shall reference:
+
+- Teacher
+- Group
+- Student
+- Lesson
+
+Duplicate attendance records for the same student and lesson shall not be allowed.
+
+---
+
+# 7.9 Homework Data
+
+Homework data shall support:
+
+- Homework assignment
+- Student homework status
+- Evaluation
+- Points
+- XP
+- Completion history
+
+Homework shall be associated with the relevant group and lesson.
+
+---
+
+# 7.10 Payment Data
+
+Payment records shall support:
+
+- Paid
+- Pending
+- Late
+
+Payment history shall remain available for historical reporting.
+
+Payment records shall be isolated by teacher and group.
+
+---
+
+# 7.11 Gamification Data
+
+The database shall support:
+
+- Points
+- XP
+- Levels
+- Rankings
+- Badges
+- Achievements
+- Achievement Progress
+- Streaks
+- Birthday Rewards
+- Achievement Timeline
+
+Point and XP changes shall be traceable through transaction records.
+
+---
+
+# 7.12 Transaction-Based Scoring
+
+Points and XP shall use transaction-based records.
+
+Example:
+
+Previous Points:
+
+100
+
+Transaction:
+
++20
+
+Reason:
+
+Homework Completed
+
+New Total:
+
+120
+
+Historical transactions shall not be deleted simply because the current total changes.
+
+---
+
+# 7.13 Level Data
+
+Student level data shall support:
+
+- Current Level
+- Current XP
+- XP Required
+- Level Progress
+- Level History
+
+Level calculations shall follow the gamification rules defined in Part 4.
+
+---
+
+# 7.14 Badge and Achievement Data
+
+Badge and achievement definitions shall be stored separately from student-earned records.
+
+This allows the system to:
+
+- Add new badges
+- Modify achievement rules
+- Track progress
+- Preserve historical awards
+
+Student achievement history shall not be lost when definitions are updated.
+
+---
+
+# 7.15 Certificate Data
+
+The database shall support:
+
+- Certificate Templates
+- Certificate Placeholders
+- Generated Certificates
+- Certificate Numbers
+- Certificate History
+
+AI-generated certificates are not required.
+
+Certificates shall use teacher-selected templates.
+
+---
+
+# 7.16 Teacher Notes
+
+Teacher Notes shall be stored separately from public student data.
+
+Notes shall be accessible only to the owning teacher.
+
+Teacher Notes shall not automatically appear in:
+
+- Telegram Reports
+- Public Reports
+- Shared Reports
+
+---
+
+# 7.17 Analytics Data
+
+Analytics shall be derived from authoritative source data.
+
+Supported analytics shall include:
+
+- Weekly Statistics
+- Monthly Statistics
+- Group Statistics
+- Student Trends
+- Ranking Data
+- Heatmap Data
+- Achievement Statistics
+- Report Snapshots
+
+Analytics may use cached values for performance.
+
+---
+
+# 7.18 Activity and Audit Data
+
+The database shall maintain separate structures for:
+
+- Activity Logs
+- Audit Logs
+- System Events
+- Notifications
+
+Activity logs shall provide user-facing history.
+
+Audit logs shall provide immutable records of important data changes.
+
+System events shall record automated application processes.
+
+---
+
+# 7.19 Import and Export Data
+
+The database shall support:
+
+- Bulk Student Import
+- Import History
+- XLSX Export
+- CSV Export
+- PDF Export
+- File Metadata
+
+Bulk imports shall support spreadsheet copy-and-paste workflows.
+
+---
+
+# 7.20 File Storage
+
+Large files shall preferably be stored outside PostgreSQL.
+
+PostgreSQL shall store:
+
+- File Name
+- File Path
+- File Type
+- File Size
+- Owner
+- Related Entity
+- Created Date
+
+This applies to:
+
+- Certificate Templates
+- Generated Certificates
+- Export Files
+- Temporary Import Files
+
+---
+
+# 7.21 UUID Standard
+
+Major application entities shall use UUID primary keys.
+
+UUIDs shall be used for entities such as:
+
+- Teachers
+- Groups
+- Students
+- Lessons
+- Homework
+- Payments
+- Transactions
+- Certificates
+- Achievements
+- Badges
+- Logs
+
+---
+
+# 7.22 Foreign Keys
+
+Relationships shall use foreign key constraints.
+
+Foreign keys shall prevent invalid references and orphaned records.
+
+Examples:
+
+student.group_id
+
+lesson.group_id
+
+attendance.student_id
+
+attendance.lesson_id
+
+certificate.student_id
+
+---
+
+# 7.23 Unique Constraints
+
+Database-level unique constraints shall prevent logical duplicates.
+
+Examples:
+
+- One attendance record per student per lesson.
+- One homework progress record per student per homework.
+- Unique certificate number.
+- Unique monthly payment where applicable.
+- Unique achievement award where applicable.
+
+---
+
+# 7.24 Data Validation
+
+The database shall enforce appropriate validation rules.
+
+Examples:
+
+- Required fields cannot be empty.
+- Numeric values must use valid ranges.
+- Dates must be valid.
+- Foreign keys must exist.
+- Status fields must contain valid values.
+
+Application-level validation shall complement database validation.
+
+---
+
+# 7.25 Row Level Security
+
+Row Level Security shall be enabled for teacher-owned tables.
+
+Teachers shall only access records belonging to their authenticated account.
+
+Frontend filtering shall never be considered sufficient security.
+
+---
+
+# 7.26 Data Isolation
+
+Teacher A shall never be able to access:
+
+- Teacher B's students
+- Teacher B's groups
+- Teacher B's attendance
+- Teacher B's payments
+- Teacher B's analytics
+- Teacher B's certificates
+- Teacher B's activity logs
+
+Data isolation shall be enforced at the database level.
+
+---
+
+# 7.27 Historical Data Preservation
+
+Historical data shall remain available.
+
+The system shall preserve:
+
+- Attendance History
+- Homework History
+- Payment History
+- Point Transactions
+- XP Transactions
+- Achievement History
+- Badge History
+- Ranking History
+- Certificate History
+- Activity History
+
+Monthly resets shall not delete historical records.
+
+---
+
+# 7.28 Soft Deletion
+
+Soft deletion shall be used for entities where historical references must remain valid.
+
+Potential examples:
+
+- Students
+- Groups
+- Certificate Templates
+
+Soft-deleted records shall not appear in normal active lists.
+
+Historical records referencing them shall remain valid.
+
+---
+
+# 7.29 Database Transactions
+
+Critical multi-step operations shall use database transactions.
+
+Examples:
+
+Attendance Update:
+
+Attendance
+
+→ Points
+
+→ XP
+
+→ Achievement
+
+→ Analytics
+
+→ Activity Log
+
+If a critical operation fails, the transaction shall roll back where appropriate.
+
+---
+
+# 7.30 Indexing
+
+Indexes shall be created for frequently queried fields.
+
+Potential indexed fields:
+
+- teacher_id
+- group_id
+- student_id
+- lesson_id
+- homework_id
+- created_at
+- lesson_date
+- academic_year
+- academic_month
+- status
+
+Indexes shall be added based on actual query requirements.
+
+Unnecessary indexes shall be avoided.
+
+---
+
+# 7.31 Query Optimization
+
+Database queries shall:
+
+- Select only required columns.
+- Avoid N+1 queries.
+- Use indexes.
+- Use efficient joins.
+- Use pagination.
+- Avoid unnecessary full-table scans.
+- Avoid loading large historical datasets unnecessarily.
+
+---
+
+# 7.32 Pagination
+
+Pagination shall be used for potentially large datasets.
+
+Examples:
+
+- Activity Logs
+- Notifications
+- Certificates
+- Transactions
+- Historical Reports
+- Student Lists where necessary
+
+The frontend shall not request unlimited records in a single query.
+
+---
+
+# 7.33 Caching
+
+Caching may be used for frequently requested derived data.
+
+Possible cached data:
+
+- Dashboard Summary
+- Group Statistics
+- Rankings
+- Weekly Statistics
+- Monthly Statistics
+
+Cached data shall never replace authoritative records.
+
+---
+
+# 7.34 Database Migrations
+
+All structural database changes shall use version-controlled migrations.
+
+Migrations shall be used for:
+
+- Creating tables
+- Adding columns
+- Creating indexes
+- Adding constraints
+- Modifying RLS policies
+
+Manual undocumented production changes shall be avoided.
+
+---
+
+# 7.35 Environment Security
+
+Database credentials and private keys shall never be committed to GitHub.
+
+Secrets shall be stored using environment variables.
+
+The following shall remain private:
+
+- Database passwords
+- Supabase service-role keys
+- API keys
+- Telegram bot tokens
+- Authentication secrets
+
+---
+
+# 7.36 Backup and Recovery
+
+The database shall support backup and recovery through the selected infrastructure.
+
+Critical application data shall not depend on:
+
+- Browser storage
+- Local machine files
+- Telegram messages
+
+The database shall remain recoverable independently.
+
+---
+
+# 7.37 Scalability
+
+The initial database shall support approximately:
+
+- Up to 20 teachers
+- Multiple groups per teacher
+- Multiple students per group
+- Large historical lesson records
+- Large attendance history
+- Large homework history
+- Gamification history
+- Analytics history
+
+The architecture shall avoid unnecessary enterprise complexity.
+
+---
+
+# 7.38 Lightweight Infrastructure
+
+The initial implementation shall avoid unnecessary infrastructure.
+
+The project shall not require:
+
+- Microservices
+- Separate analytics database
+- Dedicated Redis server
+- Message queue
+- Kubernetes
+- Paid analytics infrastructure
+
+unless future scale creates a genuine technical requirement.
+
+---
+
+# 7.39 Free Technology Requirement
+
+The implementation shall prioritize:
+
+- PostgreSQL
+- Supabase
+- Open-source libraries
+- Free-tier hosting
+- Free developer tools
+
+Paid third-party services shall not be required for core functionality.
+
+---
+
+# 7.40 Database Documentation
+
+Each database table shall be documented with:
+
+- Purpose
+- Columns
+- Data Types
+- Relationships
+- Constraints
+- Indexes
+- RLS Policies
+
+Database documentation shall remain synchronized with migrations.
+
+---
+
+# 7.41 Naming Convention
+
+Database naming shall use:
+
+snake_case
+
+Examples:
+
+- teacher_profiles
+- student_levels
+- point_transactions
+- activity_logs
+- monthly_statistics
+
+Naming shall remain consistent throughout the project.
+
+---
+
+# 7.42 Timestamp Standard
+
+Database timestamps shall use timezone-aware timestamps.
+
+Recommended PostgreSQL type:
+
+TIMESTAMPTZ
+
+The application shall display timestamps according to the appropriate local timezone.
+
+---
+
+# 7.43 Error Handling
+
+Database errors shall:
+
+- Preserve data integrity.
+- Be logged safely.
+- Avoid exposing sensitive information.
+- Return understandable messages to the UI.
+
+Raw SQL errors shall never be displayed directly to teachers.
+
+---
+
+# 7.44 Database Performance Requirements
+
+The database shall be optimized for:
+
+- Fast Journal loading
+- Fast attendance updates
+- Fast homework updates
+- Fast student search
+- Fast dashboard loading
+- Fast ranking calculations
+- Fast analytics queries
+
+The database shall avoid unnecessary complexity that could reduce performance.
+
+---
+
+# 7.45 Database Reliability Requirements
+
+The database shall:
+
+- Prevent invalid relationships.
+- Prevent unauthorized access.
+- Preserve historical data.
+- Prevent duplicate critical records.
+- Support transactional operations.
+- Support recovery.
+- Handle concurrent teacher actions safely.
+
+---
+
+# 7.46 Final Acceptance Criteria
+
+The database shall be considered complete when:
+
+- PostgreSQL is correctly configured.
+- Required tables are implemented.
+- Relationships are enforced.
+- Foreign keys work correctly.
+- Unique constraints work correctly.
+- RLS policies work correctly.
+- Teacher data is isolated.
+- Historical data is preserved.
+- Point and XP transactions are traceable.
+- Analytics can be regenerated from source data.
+- Activity logs work correctly.
+- Audit logs are immutable.
+- File metadata is stored correctly.
+- Import and export records are maintained.
+- Database migrations are version controlled.
+- Secrets are not committed to GitHub.
+- Queries are optimized.
+- The database supports approximately 20 teachers.
+- The architecture remains lightweight.
+- Free-tier infrastructure can support the initial deployment.
+
+---
+
+# 7.47 Final Database Principle
+
+The database architecture shall follow:
+
+SOURCE DATA FIRST.
+
+DERIVED DATA SECOND.
+
+CACHE LAST.
+
+Security shall be enforced at the database level.
+
+Historical data shall remain recoverable.
+
+Performance optimizations shall never compromise data integrity.
+
+The database shall remain simple, lightweight, secure, maintainable, and scalable.
+
+---
+
+**End of Part 7 – Database Requirements**
+
+# Part 8 — API & Security Requirements
+
+---
+
+# 8.0 Purpose
+
+This part defines the API architecture, authentication, authorization, security, data access, validation, error handling, integration, and secret management requirements.
+
+The API architecture shall prioritize:
+
+- Security
+- Simplicity
+- Reliability
+- Fast responses
+- Low infrastructure overhead
+- Minimal dependencies
+- Easy maintenance
+
+The application shall use a secure architecture suitable for a teacher-only SaaS application.
+
+---
+
+# 8.1 API Architecture
+
+The application shall use a lightweight API architecture.
+
+The preferred architecture shall use:
+
+- Supabase Authentication
+- Supabase PostgreSQL
+- Supabase Row Level Security
+- Application server-side functions where required
+- REST or Supabase-generated APIs where appropriate
+
+The application shall not introduce unnecessary backend infrastructure.
+
+---
+
+# 8.2 API Design Principles
+
+All API operations shall:
+
+- Validate input.
+- Authenticate the request.
+- Authorize access.
+- Return predictable responses.
+- Handle errors safely.
+- Avoid exposing internal implementation details.
+- Avoid unnecessary database queries.
+
+API endpoints shall follow consistent naming conventions.
+
+---
+
+# 8.3 Authentication
+
+Authentication shall be handled using:
+
+Supabase Authentication
+
+Supported authentication method:
+
+- Email + Password
+
+The system shall create an authenticated teacher session after successful login.
+
+Student accounts shall not be required.
+
+---
+
+# 8.4 Teacher Authentication
+
+Only authorized teachers shall access the application.
+
+A teacher account shall provide access to:
+
+- Teacher Dashboard
+- Groups
+- Students
+- Journal
+- Analytics
+- Gamification
+- Reports
+- Certificates
+- Activity
+- Settings
+
+Unauthenticated users shall not access protected application data.
+
+---
+
+# 8.5 Session Management
+
+Authenticated sessions shall be managed securely.
+
+The application shall:
+
+- Maintain authenticated sessions.
+- Refresh sessions when required.
+- Detect expired sessions.
+- Redirect unauthenticated users to login.
+- Prevent unauthorized API requests.
+
+Session tokens shall not be manually stored in insecure application storage.
+
+---
+
+# 8.6 Authorization
+
+Authentication answers:
+
+"Who is the user?"
+
+Authorization answers:
+
+"What can the user access?"
+
+Every protected operation shall perform authorization checks.
+
+A teacher may only access records belonging to that teacher.
+
+---
+
+# 8.7 Row Level Security
+
+Supabase Row Level Security shall be the primary database-level authorization mechanism.
+
+RLS shall protect teacher-owned data.
+
+Example:
+
+Teacher A requests:
+
+GET /students
+
+The database shall return only students belonging to Teacher A.
+
+Teacher A shall never receive Teacher B's records.
+
+---
+
+# 8.8 Frontend Security
+
+Frontend restrictions shall not be considered sufficient security.
+
+For example:
+
+Hiding another teacher's group in the UI
+
+is NOT sufficient.
+
+The database/API must also reject unauthorized access.
+
+---
+
+# 8.9 API Input Validation
+
+All user-provided data shall be validated before processing.
+
+Validation shall include:
+
+- Required fields
+- Data types
+- String lengths
+- Numeric ranges
+- Dates
+- UUIDs
+- Enum values
+- File types
+- File sizes
+
+Invalid requests shall be rejected safely.
+
+---
+
+# 8.10 Student Input Validation
+
+Student creation and editing shall validate:
+
+- Student Name
+- Phone Number
+- Payment Number
+- Birthday
+- Group
+- Join Date
+
+The application shall provide clear validation messages.
+
+---
+
+# 8.11 Bulk Import Validation
+
+Bulk student imports shall validate every row before insertion.
+
+The system shall detect:
+
+- Empty names
+- Invalid phone numbers
+- Duplicate students
+- Invalid columns
+- Invalid data types
+- Excessive input size
+
+Invalid data shall not crash the application.
+
+---
+
+# 8.12 API Response Format
+
+API responses should follow a consistent structure.
+
+Successful response example:
+
+{
+  "success": true,
+  "data": {}
+}
+
+Error response example:
+
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid student data."
+  }
+}
+
+Internal database details shall never be returned to the client.
+
+---
+
+# 8.13 HTTP Status Codes
+
+The API shall use appropriate HTTP status codes where applicable.
+
+Examples:
+
+200 — Success
+
+201 — Created
+
+400 — Bad Request
+
+401 — Unauthenticated
+
+403 — Forbidden
+
+404 — Not Found
+
+409 — Conflict
+
+422 — Validation Error
+
+429 — Rate Limited
+
+500 — Internal Server Error
+
+---
+
+# 8.14 Error Handling
+
+Errors shall be:
+
+- Predictable
+- Safe
+- Logged internally where appropriate
+- Understandable to users
+
+The API shall never expose:
+
+- SQL queries
+- Database credentials
+- Stack traces
+- API keys
+- Internal file paths
+- Service credentials
+
+---
+
+# 8.15 Rate Limiting
+
+Rate limiting shall be applied where abuse or excessive requests are possible.
+
+Potential targets:
+
+- Login
+- Password reset
+- Bulk imports
+- File uploads
+- Report generation
+- Certificate generation
+- Telegram requests
+
+Rate limiting shall not unnecessarily restrict normal teacher usage.
+
+---
+
+# 8.16 File Upload Security
+
+Uploaded files shall be validated before storage.
+
+Validation shall include:
+
+- File type
+- MIME type
+- File extension
+- File size
+
+The application shall reject unsupported files.
+
+Uploaded files shall not be executed as application code.
+
+---
+
+# 8.17 Certificate Security
+
+Certificate files shall be associated with the correct:
+
+- Teacher
+- Student
+- Group
+- Certificate record
+
+A teacher shall not be able to access another teacher's certificate files.
+
+---
+
+# 8.18 API Pagination
+
+APIs returning potentially large datasets shall support pagination.
+
+Examples:
+
+- Students
+- Activity Logs
+- Certificates
+- Notifications
+- Transactions
+- Reports
+
+The API shall avoid returning unlimited records.
+
+---
+
+# 8.19 API Filtering
+
+Where appropriate, APIs shall support filtering by:
+
+- Group
+- Student
+- Date
+- Month
+- Week
+- Status
+
+Filtering shall occur as close to the database layer as practical.
+
+---
+
+# 8.20 API Sorting
+
+APIs shall support predictable sorting where required.
+
+Examples:
+
+- Newest First
+- Oldest First
+- Highest Points
+- Lowest Points
+- Highest Rank
+- Student Name
+
+Sorting shall not expose records outside the authenticated teacher's ownership.
+
+---
+
+# 8.21 API Efficiency
+
+API calls shall be optimized.
+
+The application shall:
+
+- Avoid duplicate requests.
+- Avoid unnecessary requests.
+- Request only required fields.
+- Use pagination.
+- Use caching where appropriate.
+- Batch operations when possible.
+
+---
+
+# 8.22 Journal API
+
+The Journal API shall support efficient operations for:
+
+- Loading students
+- Loading lessons
+- Loading attendance
+- Updating attendance
+- Loading homework
+- Updating homework
+- Adding points
+- Adding notes
+
+High-frequency Journal actions should require minimal network requests.
+
+---
+
+# 8.23 Bulk Operations
+
+The API shall support batch operations where beneficial.
+
+Examples:
+
+- Bulk student import
+- Bulk attendance update
+- Bulk homework update
+- Bulk point updates where appropriate
+
+Batch operations shall use transactions when data consistency requires it.
+
+---
+
+# 8.24 Analytics API
+
+Analytics APIs shall provide:
+
+- Weekly Statistics
+- Monthly Statistics
+- Group Statistics
+- Student Statistics
+- Rankings
+- Trends
+- Heatmaps
+
+Analytics endpoints shall use efficient database queries and cached derived data where beneficial.
+
+---
+
+# 8.25 Report API
+
+Report generation shall support:
+
+- Weekly Reports
+- Monthly Reports
+- Student Reports
+- Group Reports
+- Attendance Reports
+- Homework Reports
+- Payment Reports
+- Gamification Reports
+
+Large report generation may be processed asynchronously.
+
+---
+
+# 8.26 Certificate API
+
+Certificate functionality shall support:
+
+- Template Upload
+- Template Listing
+- Template Selection
+- Certificate Generation
+- Certificate History
+- Certificate Revocation
+
+Certificate generation shall not require AI services.
+
+---
+
+# 8.27 Activity API
+
+Activity APIs shall support:
+
+- Recent Activity
+- Student Activity
+- Group Activity
+- Activity Filtering
+
+Audit logs shall not be editable through normal teacher-facing APIs.
+
+---
+
+# 8.28 Notification API
+
+Notification APIs shall support:
+
+- Get Notifications
+- Get Unread Count
+- Mark as Read
+- Mark All as Read where appropriate
+
+Notifications shall only be returned to the owning teacher.
+
+---
+
+# 8.29 Telegram Integration
+
+Telegram integration shall be optional.
+
+The system may send selected reports to a configured Telegram group.
+
+Telegram credentials shall never be exposed to the frontend.
+
+Telegram bot tokens shall be stored as server-side environment variables or secure secrets.
+
+---
+
+# 8.30 Telegram Security
+
+The frontend shall never directly expose:
+
+- Telegram Bot Token
+- Private integration credentials
+- Server-side secrets
+
+Telegram requests requiring secrets shall be executed through a secure server-side function.
+
+---
+
+# 8.31 API Secrets
+
+Secrets shall be stored using environment variables or the hosting provider's secure secret management.
+
+Secrets shall never be stored in:
+
+- GitHub source code
+- Frontend JavaScript
+- Public configuration files
+- Database records unless encrypted and specifically required
+
+---
+
+# 8.32 Environment Variables
+
+The project shall support environment variables for:
+
+- Supabase URL
+- Supabase Public Key
+- Supabase Service Role Key
+- Telegram Bot Token
+- Other private integration credentials
+
+Public and private environment variables shall be clearly separated.
+
+The Supabase service-role key shall never be exposed to the browser.
+
+---
+
+# 8.33 CORS
+
+API access shall restrict origins where server-side APIs are used.
+
+The production frontend domain shall be explicitly allowed.
+
+Wildcard CORS shall be avoided where security requires restricted origins.
+
+---
+
+# 8.34 CSRF Protection
+
+If cookie-based server-side authentication is used, appropriate CSRF protection shall be implemented.
+
+If the authentication architecture uses Supabase-managed token authentication without vulnerable cookie-based mutation endpoints, unnecessary CSRF infrastructure shall be avoided.
+
+---
+
+# 8.35 XSS Protection
+
+The application shall protect against Cross-Site Scripting.
+
+User-generated content such as:
+
+- Teacher Notes
+- Student Names
+- Homework Titles
+- Group Names
+
+shall be safely rendered.
+
+Raw HTML from users shall not be rendered unless explicitly sanitized.
+
+---
+
+# 8.36 SQL Injection Protection
+
+The application shall never construct SQL queries using unsafe string concatenation.
+
+Database queries shall use:
+
+- Parameterized queries
+- Supabase query methods
+- Safe query builders
+
+User input shall never be directly inserted into SQL statements.
+
+---
+
+# 8.37 Authorization on Related Records
+
+Authorization shall not only check the direct record.
+
+Example:
+
+A teacher requests:
+
+student_id = X
+
+The system shall verify:
+
+Student X belongs to a group owned by the authenticated teacher.
+
+This prevents indirect unauthorized access.
+
+---
+
+# 8.38 IDOR Prevention
+
+The API shall prevent insecure direct object references.
+
+Changing an ID in a request shall never allow a teacher to access another teacher's:
+
+- Student
+- Group
+- Certificate
+- Report
+- Payment
+- Activity
+- File
+
+Authorization shall always be verified server-side/database-side.
+
+---
+
+# 8.39 Audit Requirements
+
+Security-sensitive actions shall generate audit records.
+
+Examples:
+
+- Login-related security events
+- Account changes
+- Important data changes
+- Certificate revocation
+- Permission changes
+- Integration configuration changes
+
+---
+
+# 8.40 Logging
+
+Application errors shall be logged without exposing sensitive information.
+
+Logs shall not contain:
+
+- Passwords
+- Authentication tokens
+- API keys
+- Telegram bot tokens
+- Service-role keys
+
+---
+
+# 8.41 Dependency Security
+
+Third-party dependencies shall:
+
+- Have a clear purpose.
+- Preferably be open source.
+- Be kept reasonably up to date.
+- Avoid unnecessary packages.
+
+The project shall avoid dependency bloat.
+
+---
+
+# 8.42 Free Infrastructure Requirement
+
+Core API functionality shall not depend on paid services.
+
+Preferred infrastructure:
+
+- Supabase
+- Open-source libraries
+- Free-tier hosting
+- Native browser APIs
+
+Paid APIs shall not be required for:
+
+- Authentication
+- Database
+- Analytics
+- Gamification
+- Certificates
+- Reports
+
+---
+
+# 8.43 Security vs Performance
+
+Security mechanisms shall be implemented without introducing unnecessary complexity.
+
+The application shall prioritize:
+
+Security
+
++
+
+Reliability
+
++
+
+Performance
+
+The architecture shall avoid unnecessary microservices, gateways, queues, or infrastructure.
+
+---
+
+# 8.44 API Reliability
+
+API operations shall handle:
+
+- Network failure
+- Database failure
+- Timeout
+- Invalid request
+- Expired session
+- Duplicate request
+
+The UI shall provide appropriate feedback.
+
+---
+
+# 8.45 Retry Rules
+
+Automatic retries may be used for safe idempotent operations.
+
+Retries shall not automatically repeat operations that could create duplicate:
+
+- Payments
+- Points
+- XP
+- Certificates
+- Rewards
+
+Critical operations shall use idempotency mechanisms where necessary.
+
+---
+
+# 8.46 Idempotency
+
+Operations that may be retried shall support idempotency where appropriate.
+
+Examples:
+
+- Point rewards
+- Birthday rewards
+- Monthly rewards
+- Certificate generation
+- Automated analytics processing
+
+The same event shall not accidentally produce duplicate rewards.
+
+---
+
+# 8.47 API Versioning
+
+The initial application may use a single API version.
+
+If versioning becomes necessary, the API shall use a clear structure such as:
+
+/api/v1/
+
+Breaking changes shall not silently break existing clients.
+
+---
+
+# 8.48 Security Acceptance Criteria
+
+The API and security system shall be considered complete when:
+
+- Authentication works securely.
+- Teacher authorization works correctly.
+- RLS prevents cross-teacher access.
+- Frontend cannot bypass authorization.
+- Input validation is implemented.
+- SQL injection is prevented.
+- XSS risks are mitigated.
+- Sensitive secrets are protected.
+- Telegram credentials remain server-side.
+- File uploads are validated.
+- API errors do not expose internal information.
+- Rate limiting exists where appropriate.
+- Critical operations are protected against duplication.
+- Audit events are recorded.
+- Sessions are handled securely.
+
+---
+
+# 8.49 Performance Acceptance Criteria
+
+The API shall:
+
+- Minimize unnecessary requests.
+- Support batch operations.
+- Use efficient queries.
+- Support pagination.
+- Return only required data.
+- Avoid unnecessary third-party services.
+- Remain responsive for approximately 20 teachers.
+- Avoid unnecessary backend infrastructure.
+
+---
+
+# 8.50 Final API & Security Principle
+
+The application shall follow:
+
+AUTHENTICATE → AUTHORIZE → VALIDATE → EXECUTE → LOG
+
+Every protected operation shall follow this security model.
+
+The frontend shall never be trusted as the primary security layer.
+
+Database-level security shall protect teacher data.
+
+Secrets shall remain server-side.
+
+The API architecture shall remain lightweight, secure, fast, and maintainable.
+
+---
+
+**End of Part 8 – API & Security Requirements**
+
+# Part 9 — Performance & Deployment Requirements
+
+---
+
+# 9.0 Purpose
+
+This part defines the performance, hosting, deployment, environment configuration, monitoring, backup, recovery, and production-readiness requirements of the application.
+
+The application shall be designed to remain:
+
+- Fast
+- Lightweight
+- Reliable
+- Affordable
+- Easy to deploy
+- Easy to maintain
+- Easy to update
+
+The initial system shall be optimized for approximately 20 teachers and their groups.
+
+---
+
+# 9.1 Performance Principles
+
+The application shall prioritize:
+
+1. Fast initial loading
+2. Fast navigation
+3. Fast Journal interaction
+4. Fast database queries
+5. Minimal network requests
+6. Low JavaScript bundle size
+7. Efficient database usage
+8. Minimal third-party dependencies
+
+Visual complexity shall never be prioritized over application performance.
+
+---
+
+# 9.2 Target Users and Scale
+
+The initial deployment shall support approximately:
+
+- Up to 20 teachers
+- Multiple groups per teacher
+- Multiple students per group
+- Multiple lessons per group
+- Large historical attendance records
+- Large homework history
+- Gamification history
+- Analytics history
+
+The architecture shall be sufficient for this scale without requiring enterprise infrastructure.
+
+---
+
+# 9.3 Hosting Strategy
+
+The application shall use lightweight cloud hosting.
+
+Preferred architecture:
+
+Frontend:
+
+Vercel or equivalent free-tier hosting
+
+Database:
+
+Supabase PostgreSQL
+
+Authentication:
+
+Supabase Authentication
+
+File Storage:
+
+Supabase Storage or equivalent
+
+Server-side Functions:
+
+Supabase Edge Functions or equivalent lightweight serverless functions
+
+Telegram:
+
+Server-side Telegram integration
+
+---
+
+# 9.4 Free-Tier First
+
+The initial deployment shall prioritize free-tier infrastructure.
+
+Core functionality shall not depend on paid infrastructure.
+
+The system should remain operational using free services where reasonable.
+
+Paid services may be introduced later only when actual usage requires them.
+
+---
+
+# 9.5 Production Architecture
+
+Recommended architecture:
+
+User
+
+↓
+
+Frontend
+
+↓
+
+Supabase Authentication
+
+↓
+
+Supabase API / Server Functions
+
+↓
+
+PostgreSQL
+
+↓
+
+Storage / External Integrations
+
+Telegram
+
+The architecture shall avoid unnecessary intermediary services.
+
+---
+
+# 9.6 Frontend Deployment
+
+The frontend shall be deployable as a production web application.
+
+Deployment shall support:
+
+- Git-based deployment
+- Automatic builds
+- Environment variables
+- Production builds
+- Preview deployments where supported
+
+---
+
+# 9.7 GitHub Integration
+
+The source code shall be stored in GitHub.
+
+Recommended workflow:
+
+Developer
+
+↓
+
+GitHub Repository
+
+↓
+
+Push / Pull Request
+
+↓
+
+Automated Build
+
+↓
+
+Deployment
+
+The production application shall be deployable from the repository.
+
+---
+
+# 9.8 Branch Strategy
+
+The initial project may use:
+
+main
+
+as the production branch.
+
+Optional development branch:
+
+develop
+
+Feature branches may be used when required.
+
+The project shall avoid unnecessary Git workflow complexity.
+
+---
+
+# 9.9 Deployment Process
+
+A production deployment shall follow:
+
+1. Code changes
+2. Local testing
+3. Git commit
+4. Git push
+5. Automated build
+6. Environment configuration
+7. Database migration
+8. Deployment
+9. Smoke testing
+
+Production deployments shall not rely on undocumented manual steps.
+
+---
+
+# 9.10 Database Migration Deployment
+
+Database migrations shall be version-controlled.
+
+Before applying a migration to production:
+
+- Migration shall be tested.
+- Data impact shall be understood.
+- Destructive changes shall be reviewed.
+- Backup availability shall be confirmed where appropriate.
+
+---
+
+# 9.11 Environment Separation
+
+The project should support separate environments where practical:
+
+- Development
+- Preview / Testing
+- Production
+
+Environment-specific configuration shall not be hardcoded.
+
+---
+
+# 9.12 Environment Variables
+
+Sensitive and environment-specific configuration shall use environment variables.
+
+Examples:
+
+- Supabase URL
+- Supabase Anon/Public Key
+- Supabase Service Role Key
+- Telegram Bot Token
+- Application URL
+- Other private integration credentials
+
+Secrets shall never be committed to GitHub.
+
+---
+
+# 9.13 Environment File
+
+The repository shall include:
+
+.env.example
+
+The file shall contain variable names and example placeholders.
+
+It shall not contain real secrets.
+
+Example:
+
+SUPABASE_URL=
+
+SUPABASE_ANON_KEY=
+
+SUPABASE_SERVICE_ROLE_KEY=
+
+TELEGRAM_BOT_TOKEN=
+
+---
+
+# 9.14 Build Process
+
+The production build shall:
+
+- Compile the application
+- Optimize assets
+- Remove development-only code where possible
+- Minimize JavaScript
+- Optimize CSS
+- Optimize static assets
+
+Build failures shall prevent deployment.
+
+---
+
+# 9.15 Bundle Size
+
+The frontend shall minimize unnecessary bundle size.
+
+Developers shall avoid:
+
+- Large unnecessary libraries
+- Duplicate dependencies
+- Unused packages
+- Large icon libraries
+- Heavy animation libraries
+- Unnecessary client-side frameworks
+
+---
+
+# 9.16 Code Splitting
+
+Large modules should be loaded only when required.
+
+Examples:
+
+- Analytics
+- Reports
+- Certificate generation
+- Advanced settings
+
+The Journal and Dashboard should remain fast to load.
+
+---
+
+# 9.17 Lazy Loading
+
+Non-critical UI components may use lazy loading.
+
+Potential candidates:
+
+- Charts
+- Reports
+- Certificate tools
+- Advanced analytics
+- Historical data
+
+Critical functionality shall not be unnecessarily delayed.
+
+---
+
+# 9.18 Image Optimization
+
+Images shall be optimized before delivery.
+
+The application shall:
+
+- Avoid unnecessarily large images.
+- Use modern image formats where appropriate.
+- Lazy-load non-critical images.
+- Avoid decorative images that do not provide functional value.
+
+---
+
+# 9.19 Caching
+
+Appropriate caching may be used for:
+
+- Static assets
+- Dashboard summaries
+- Group statistics
+- Rankings
+- Analytics
+
+Caching shall not cause incorrect or stale critical data.
+
+---
+
+# 9.20 Database Performance
+
+Database performance shall prioritize:
+
+- Indexed queries
+- Efficient joins
+- Pagination
+- Limited result sets
+- Aggregation at database level
+- Avoidance of N+1 queries
+
+The Journal shall receive special optimization because it is a high-frequency interface.
+
+---
+
+# 9.21 Journal Performance
+
+The Journal shall remain responsive for groups containing many students and lessons.
+
+The implementation should use:
+
+- Efficient queries
+- Pagination or virtualization where necessary
+- Optimistic UI where safe
+- Batch operations
+- Minimal network requests
+
+A teacher should be able to mark attendance without noticeable delay.
+
+---
+
+# 9.22 API Performance
+
+API endpoints shall:
+
+- Return only necessary data.
+- Avoid duplicate queries.
+- Use pagination.
+- Use efficient filters.
+- Support batch operations where appropriate.
+
+Large historical datasets shall not be loaded automatically.
+
+---
+
+# 9.23 Analytics Performance
+
+Analytics calculations shall be optimized.
+
+The system may use:
+
+- SQL aggregation
+- Materialized views
+- Cached summaries
+- Precomputed statistics
+
+where beneficial.
+
+Analytics optimization shall not compromise source data integrity.
+
+---
+
+# 9.24 Search Performance
+
+Student and group search shall remain responsive.
+
+Search queries shall use appropriate indexes.
+
+The application shall avoid loading the complete student database into the browser.
+
+---
+
+# 9.25 Concurrency
+
+The system shall safely handle multiple teachers working simultaneously.
+
+Database operations shall maintain data integrity during concurrent updates.
+
+Critical operations shall use transactions where required.
+
+---
+
+# 9.26 Offline Behavior
+
+Full offline functionality is not required for the initial version.
+
+If the network connection is lost:
+
+- The UI shall show a clear connection state.
+- Failed operations shall provide feedback.
+- The application shall not silently lose data.
+
+Offline caching may be introduced later if beneficial.
+
+---
+
+# 9.27 Error Recovery
+
+The application shall recover gracefully from:
+
+- Temporary network failure
+- API failure
+- Database timeout
+- Expired authentication
+- Failed file upload
+- Failed Telegram request
+
+Users shall receive a clear message and retry option where appropriate.
+
+---
+
+# 9.28 Monitoring
+
+The production system should provide basic monitoring.
+
+Monitoring should cover:
+
+- Application errors
+- Failed API requests
+- Database errors
+- Deployment failures
+- Authentication failures
+- Performance problems
+
+The initial system shall avoid expensive monitoring infrastructure.
+
+---
+
+# 9.29 Logging
+
+Logs shall be useful for debugging without exposing sensitive information.
+
+Logs shall not contain:
+
+- Passwords
+- Access tokens
+- API keys
+- Telegram bot tokens
+- Service-role keys
+- Sensitive personal information unnecessarily
+
+---
+
+# 9.30 Health Checks
+
+Where server-side functions are used, basic health checks should be available.
+
+A health check may verify:
+
+- Application availability
+- Database connectivity
+- Required configuration
+
+Health checks shall not expose sensitive configuration.
+
+---
+
+# 9.31 Backup
+
+Database backups shall be configured according to the capabilities of the selected database provider.
+
+Important data includes:
+
+- Teachers
+- Groups
+- Students
+- Lessons
+- Attendance
+- Homework
+- Payments
+- Transactions
+- Gamification
+- Certificates
+- Activity Logs
+
+---
+
+# 9.32 Recovery
+
+The application shall have a documented recovery process.
+
+Recovery shall consider:
+
+- Database restoration
+- Environment configuration
+- Storage files
+- Application deployment
+- Database migrations
+
+The system shall not depend exclusively on a developer's local computer for recovery.
+
+---
+
+# 9.33 Disaster Recovery
+
+The initial system does not require enterprise disaster recovery infrastructure.
+
+However, the project shall maintain sufficient backups and documentation to restore the production system after a major failure.
+
+---
+
+# 9.34 Storage Management
+
+File storage shall be monitored.
+
+The system shall avoid storing unnecessary duplicate files.
+
+Temporary files shall be removed according to an appropriate retention policy.
+
+---
+
+# 9.35 Telegram Reliability
+
+Telegram reporting shall not block the core application.
+
+If Telegram is unavailable:
+
+- Attendance shall still work.
+- Homework shall still work.
+- Gamification shall still work.
+- Analytics shall still work.
+
+Telegram failures shall be logged and reported separately.
+
+---
+
+# 9.36 External Service Failure
+
+External services shall be treated as optional dependencies where possible.
+
+Failure of an external service shall not cause the entire application to crash.
+
+Examples:
+
+Telegram unavailable
+
+→ Telegram reporting fails
+
+→ Main application continues working.
+
+---
+
+# 9.37 Deployment Security
+
+Production deployment shall:
+
+- Use HTTPS.
+- Protect environment variables.
+- Use production authentication configuration.
+- Use secure database policies.
+- Disable development debugging.
+- Avoid exposing internal errors.
+
+---
+
+# 9.38 HTTPS
+
+All production traffic shall use HTTPS.
+
+HTTP requests shall be redirected to HTTPS where supported by the hosting platform.
+
+---
+
+# 9.39 Domain Configuration
+
+The production application shall use a stable domain.
+
+The system should support:
+
+- Custom domain
+- HTTPS certificate
+- Secure redirects
+
+The domain shall not be hardcoded throughout the application.
+
+---
+
+# 9.40 Deployment Documentation
+
+The repository shall contain:
+
+DEPLOYMENT.md
+
+This file shall explain:
+
+- Required accounts
+- Environment variables
+- Local setup
+- Database setup
+- Migration process
+- Build process
+- Deployment process
+- Telegram configuration
+- Production configuration
+
+---
+
+# 9.41 Local Development
+
+Developers shall be able to run the project locally.
+
+The documentation shall explain:
+
+1. Clone repository
+2. Install dependencies
+3. Configure environment variables
+4. Configure database
+5. Run migrations
+6. Start development server
+
+The exact commands shall be documented in the project's technical documentation.
+
+---
+
+# 9.42 Production Configuration
+
+Production configuration shall be separate from development configuration.
+
+The application shall not use:
+
+- Development database in production
+- Development secrets in production
+- Debug mode in production
+- Test Telegram bot credentials in production
+
+---
+
+# 9.43 Automated Deployment
+
+Where supported, deployment should be automated through GitHub integration.
+
+Recommended flow:
+
+Push to main
+
+↓
+
+Build
+
+↓
+
+Test
+
+↓
+
+Deploy
+
+A failed build or required validation failure shall prevent production deployment.
+
+---
+
+# 9.44 Pre-Deployment Checks
+
+Before production deployment, the project should verify:
+
+- Build succeeds.
+- Type checking succeeds.
+- Linting succeeds where configured.
+- Tests pass where implemented.
+- Database migrations are valid.
+- Environment variables exist.
+- No secrets are committed.
+- Critical functionality works.
+
+---
+
+# 9.45 Smoke Testing
+
+After deployment, basic smoke tests shall verify:
+
+- Login
+- Dashboard
+- Group loading
+- Student loading
+- Journal
+- Attendance
+- Homework
+- Gamification
+- Analytics
+- Reports
+- Certificate generation
+- Telegram integration where enabled
+
+---
+
+# 9.46 Versioning
+
+Production releases should have identifiable versions.
+
+The project may use:
+
+Semantic Versioning:
+
+MAJOR.MINOR.PATCH
+
+Example:
+
+1.0.0
+
+Version history shall be maintained in:
+
+CHANGELOG.md
+
+---
+
+# 9.47 Rollback
+
+The deployment process shall support rollback where the hosting platform allows it.
+
+If a deployment introduces a critical issue:
+
+1. Identify failed deployment.
+2. Roll back application version.
+3. Evaluate database migration impact.
+4. Restore or correct database state if necessary.
+5. Document the incident.
+
+Database rollback shall never be performed blindly.
+
+---
+
+# 9.48 Maintenance
+
+The system shall support routine maintenance without unnecessary downtime.
+
+Maintenance tasks include:
+
+- Dependency updates
+- Database migrations
+- Security updates
+- Performance optimization
+- Bug fixes
+
+---
+
+# 9.49 Dependency Updates
+
+Dependencies shall be reviewed periodically.
+
+Updates shall be tested before production deployment.
+
+Security-critical updates shall receive priority.
+
+---
+
+# 9.50 Cost Control
+
+The initial application shall minimize operational costs.
+
+The project shall avoid unnecessary:
+
+- Paid APIs
+- Paid analytics tools
+- Paid databases
+- Paid monitoring systems
+- Dedicated servers
+- Microservices
+
+Infrastructure shall scale only when actual usage requires it.
+
+---
+
+# 9.51 Performance Acceptance Criteria
+
+The system shall be considered performance-ready when:
+
+- The Dashboard loads quickly.
+- The Journal remains responsive.
+- Attendance updates feel immediate.
+- Student search is responsive.
+- Analytics do not freeze the UI.
+- Large historical datasets are paginated.
+- Unnecessary API requests are avoided.
+- Database queries use appropriate indexes.
+- Static assets are optimized.
+- Production builds are optimized.
+
+---
+
+# 9.52 Deployment Acceptance Criteria
+
+The deployment system shall be considered complete when:
+
+- The application is hosted successfully.
+- HTTPS is enabled.
+- GitHub deployment works.
+- Environment variables are configured securely.
+- Database migrations are deployable.
+- Production authentication works.
+- RLS policies are active.
+- Database backups are configured.
+- Error handling works.
+- Basic monitoring is available.
+- Telegram integration works where enabled.
+- Rollback procedures are documented.
+- DEPLOYMENT.md is complete.
+
+---
+
+# 9.53 Final Performance & Deployment Principle
+
+The application shall follow:
+
+FAST → LIGHTWEIGHT → RELIABLE → MAINTAINABLE
+
+The project shall use the simplest infrastructure capable of supporting the required functionality.
+
+The application shall not introduce complex infrastructure without a demonstrated technical need.
+
+Performance optimization shall focus primarily on:
+
+- Database queries
+- Journal interaction
+- API efficiency
+- Bundle size
+- Network requests
+- Rendering performance
+
+Deployment shall remain reproducible, documented, secure, and easy to maintain.
+
+---
+
+**End of Part 9 – Performance & Deployment Requirements**
+
+# Part 10 — Acceptance Criteria
+
+---
+
+# 10.0 Purpose
+
+This part defines the final acceptance criteria for the English Teacher Gamification System.
+
+The application shall be considered complete only when the required functionality, security, performance, database, UI, analytics, gamification, and deployment requirements defined in this document have been implemented and verified.
+
+The acceptance criteria shall be used as the final checklist before production release.
+
+---
+
+# 10.1 General Acceptance Principle
+
+The system shall satisfy the following primary requirements:
+
+- Functional
+- Secure
+- Reliable
+- Fast
+- Lightweight
+- Maintainable
+- Teacher-focused
+- Mobile-compatible
+- Production-ready
+
+The application shall not be considered complete if core functionality is missing, broken, or implemented only as a visual mockup.
+
+---
+
+# 10.2 Authentication Acceptance
+
+The system shall:
+
+- Allow authorized teachers to log in.
+- Maintain secure sessions.
+- Prevent unauthenticated access to protected pages.
+- Handle expired sessions correctly.
+- Allow teachers to log out.
+- Protect authentication credentials.
+- Prevent unauthorized access to teacher data.
+
+Student login shall not be required.
+
+---
+
+# 10.3 Teacher Account Acceptance
+
+The system shall:
+
+- Identify the authenticated teacher.
+- Associate groups with the correct teacher.
+- Associate students with the correct groups.
+- Preserve teacher-specific settings.
+- Preserve teacher language preference.
+- Prevent cross-teacher data access.
+
+---
+
+# 10.4 Group Management Acceptance
+
+Teachers shall be able to:
+
+- Create groups.
+- Edit groups.
+- View groups.
+- Archive groups.
+- Open a group.
+- View group statistics.
+- View group students.
+- View group lessons.
+
+A teacher shall only manage their own groups.
+
+---
+
+# 10.5 Student Management Acceptance
+
+Teachers shall be able to:
+
+- Add students.
+- Edit students.
+- Archive students.
+- View student profiles.
+- Assign students to groups.
+- Search students.
+- View student history.
+
+Student records shall remain historically connected to relevant academic records.
+
+---
+
+# 10.6 Dynamic Journal Acceptance
+
+The Journal shall:
+
+- Display students as rows.
+- Display lessons/dates as columns.
+- Support attendance.
+- Support homework.
+- Support points.
+- Support relevant statuses.
+- Support horizontal scrolling.
+- Remain usable for large groups.
+- Preserve historical lessons.
+- Update records correctly.
+- Provide clear visual status indicators.
+
+The Journal shall be the primary high-frequency teacher workflow.
+
+---
+
+# 10.7 Attendance Acceptance
+
+The system shall support:
+
+- Present
+- Late
+- Excused
+- Unexcused
+
+The system shall:
+
+- Save attendance correctly.
+- Prevent duplicate attendance records.
+- Calculate attendance statistics.
+- Update relevant points/XP.
+- Update analytics.
+- Record important activity.
+
+---
+
+# 10.8 Homework Acceptance
+
+The system shall allow teachers to:
+
+- Assign homework.
+- View homework.
+- Update homework status.
+- Evaluate homework.
+- Award relevant points/XP.
+
+Supported statuses shall include configured states such as:
+
+- Perfect
+- Completed
+- Partial
+- Missing
+- Excused
+
+Homework statistics shall update correctly.
+
+---
+
+# 10.9 Payment Acceptance
+
+The system shall support:
+
+- Paid
+- Pending
+- Late
+
+Teachers shall be able to:
+
+- Record payment status.
+- Update payment status.
+- View payment history.
+- View payment statistics.
+
+Payment data shall remain teacher-isolated.
+
+---
+
+# 10.10 Points Acceptance
+
+The points system shall:
+
+- Award points according to configured rules.
+- Deduct points where configured.
+- Record point transactions.
+- Preserve transaction history.
+- Update student totals.
+- Update rankings.
+- Update relevant analytics.
+
+Point transactions shall be traceable.
+
+---
+
+# 10.11 XP and Level Acceptance
+
+The system shall:
+
+- Track XP.
+- Calculate level progression.
+- Display current level.
+- Display XP progress.
+- Record level changes.
+- Prevent duplicate XP rewards where applicable.
+
+Level rules shall follow the gamification requirements.
+
+---
+
+# 10.12 Ranking Acceptance
+
+The system shall provide:
+
+- Weekly ranking.
+- Monthly ranking.
+- Overall ranking.
+
+Ranking shall:
+
+- Use deterministic rules.
+- Handle ties consistently.
+- Update after relevant point changes.
+- Display rank changes where applicable.
+
+---
+
+# 10.13 Badge Acceptance
+
+The system shall:
+
+- Store badge definitions.
+- Award badges.
+- Display earned badges.
+- Preserve badge history.
+- Prevent unintended duplicate awards.
+- Display recently earned badges.
+
+---
+
+# 10.14 Achievement Acceptance
+
+The system shall:
+
+- Store achievement definitions.
+- Track achievement progress.
+- Unlock achievements automatically where configured.
+- Preserve achievement history.
+- Display completed achievements.
+- Display in-progress achievements.
+- Display locked achievements where appropriate.
+
+---
+
+# 10.15 Streak Acceptance
+
+The system shall support configured streak types.
+
+Examples:
+
+- Attendance Streak
+- Homework Streak
+- Perfect Homework Streak
+- Payment Streak
+- Perfect Attendance Streak
+
+The system shall correctly:
+
+- Start streaks.
+- Continue streaks.
+- Break streaks.
+- Preserve longest streaks.
+- Display current streaks.
+
+---
+
+# 10.16 Birthday Reward Acceptance
+
+The system shall:
+
+- Store student birthday information.
+- Identify birthdays.
+- Trigger configured birthday rewards.
+- Record birthday rewards.
+- Prevent duplicate birthday rewards for the same configured period.
+
+---
+
+# 10.17 Achievement Timeline Acceptance
+
+The system shall display a chronological timeline containing relevant events such as:
+
+- Badge Earned
+- Achievement Unlocked
+- Level Up
+- Certificate
+- Birthday Reward
+- Attendance Milestone
+- Homework Milestone
+- Major Reward
+
+Timeline events shall remain historically accessible.
+
+---
+
+# 10.18 Teacher Notes Acceptance
+
+Teachers shall be able to:
+
+- Create notes.
+- Edit notes.
+- View notes.
+- Archive notes.
+
+Teacher Notes shall remain private to the owning teacher.
+
+They shall not automatically appear in Telegram or public reports.
+
+---
+
+# 10.19 Analytics Acceptance
+
+The system shall provide:
+
+- Group analytics.
+- Student analytics.
+- Weekly analytics.
+- Monthly analytics.
+- Attendance analytics.
+- Homework analytics.
+- Payment analytics.
+- Points analytics.
+- XP analytics.
+- Ranking analytics.
+- Streak analytics.
+- Badge analytics.
+- Achievement analytics.
+
+Analytics shall be based on authoritative application data.
+
+---
+
+# 10.20 Performance Trend Acceptance
+
+The system shall identify appropriate trends such as:
+
+- Improving
+- Stable
+- Declining
+
+Trend calculations shall use defined historical periods.
+
+---
+
+# 10.21 Reports Acceptance
+
+The system shall support appropriate reports including:
+
+- Weekly Group Report
+- Monthly Group Report
+- Student Report
+- Attendance Report
+- Homework Report
+- Payment Report
+- Points Report
+- Gamification Report
+
+Reports shall support filtering where specified.
+
+---
+
+# 10.22 Export Acceptance
+
+Where implemented, the system shall support:
+
+- XLSX
+- CSV
+- PDF
+
+Exports shall contain readable and correctly structured information.
+
+Exporting data shall not modify source records.
+
+---
+
+# 10.23 Certificate Acceptance
+
+The system shall allow teachers to:
+
+- Create or upload certificate templates.
+- Preview templates.
+- Select students.
+- Generate certificates.
+- Store certificate history.
+- View generated certificates.
+
+AI-generated certificates shall not be required.
+
+---
+
+# 10.24 Telegram Acceptance
+
+Where Telegram integration is enabled, the system shall:
+
+- Connect securely.
+- Keep bot credentials server-side.
+- Send configured reports.
+- Support weekly/monthly statistics where configured.
+- Handle Telegram failures gracefully.
+
+Telegram failure shall not break the main application.
+
+---
+
+# 10.25 Activity Log Acceptance
+
+The system shall record important activities.
+
+Examples:
+
+- Student Created
+- Student Updated
+- Attendance Updated
+- Homework Updated
+- Payment Updated
+- Points Added
+- Badge Awarded
+- Achievement Unlocked
+- Certificate Generated
+
+Activity logs shall be chronological.
+
+---
+
+# 10.26 Audit Acceptance
+
+Security-sensitive operations shall generate audit records.
+
+Audit records shall:
+
+- Be protected from normal editing.
+- Preserve relevant timestamps.
+- Identify the responsible teacher.
+- Preserve important event information.
+
+---
+
+# 10.27 UI Acceptance
+
+The UI shall:
+
+- Be clean.
+- Be lightweight.
+- Be responsive.
+- Support Uzbek.
+- Support English.
+- Provide clear navigation.
+- Provide clear loading states.
+- Provide clear empty states.
+- Provide clear error states.
+- Provide confirmation for destructive actions.
+
+---
+
+# 10.28 Journal UI Acceptance
+
+The Journal shall:
+
+- Be easy to scan.
+- Support large groups.
+- Use clear status colors.
+- Support sticky headers where practical.
+- Keep high-frequency actions fast.
+- Avoid unnecessary navigation.
+
+---
+
+# 10.29 Responsive UI Acceptance
+
+The application shall function on:
+
+- Desktop
+- Laptop
+- Tablet
+- Mobile
+
+Desktop shall remain the primary interface.
+
+The Journal shall receive special treatment for small screens.
+
+---
+
+# 10.30 Localization Acceptance
+
+The application shall support:
+
+- Uzbek
+- English
+
+Changing the language shall update user-facing interface text consistently.
+
+Localization shall include:
+
+- Navigation
+- Buttons
+- Forms
+- Errors
+- Notifications
+- Status labels
+- Reports
+- Settings
+
+---
+
+# 10.31 Database Acceptance
+
+The database shall:
+
+- Use PostgreSQL.
+- Use appropriate relationships.
+- Enforce foreign keys.
+- Enforce unique constraints.
+- Use appropriate indexes.
+- Preserve historical data.
+- Support transactions.
+- Support migrations.
+- Protect teacher-owned records.
+
+---
+
+# 10.32 Row Level Security Acceptance
+
+RLS shall prevent cross-teacher access.
+
+Testing shall verify that:
+
+Teacher A cannot access Teacher B's:
+
+- Groups
+- Students
+- Lessons
+- Attendance
+- Homework
+- Payments
+- Points
+- XP
+- Certificates
+- Reports
+- Activity Logs
+
+---
+
+# 10.33 API Acceptance
+
+APIs shall:
+
+- Authenticate requests.
+- Authorize requests.
+- Validate input.
+- Return predictable responses.
+- Handle errors safely.
+- Avoid unnecessary requests.
+- Prevent unauthorized object access.
+
+---
+
+# 10.34 Security Acceptance
+
+The application shall protect against:
+
+- Unauthorized access
+- IDOR
+- SQL Injection
+- XSS
+- Secret exposure
+- Unsafe file uploads
+- Duplicate critical operations
+
+Sensitive credentials shall never be committed to GitHub.
+
+---
+
+# 10.35 Performance Acceptance
+
+The application shall:
+
+- Load the Dashboard quickly.
+- Load the Journal efficiently.
+- Perform attendance updates quickly.
+- Search students efficiently.
+- Avoid unnecessary API requests.
+- Avoid unnecessary database queries.
+- Avoid excessive JavaScript.
+- Avoid unnecessary dependencies.
+
+The application shall remain responsive for the intended initial scale.
+
+---
+
+# 10.36 Deployment Acceptance
+
+The application shall:
+
+- Deploy successfully to production.
+- Use HTTPS.
+- Use secure environment variables.
+- Use production database configuration.
+- Apply database migrations correctly.
+- Support GitHub-based deployment.
+- Provide deployment documentation.
+- Support rollback where practical.
+
+---
+
+# 10.37 Environment Acceptance
+
+The project shall provide:
+
+- Development environment
+- Production environment
+- Environment variable configuration
+- `.env.example`
+
+Real secrets shall not be stored in the repository.
+
+---
+
+# 10.38 Documentation Acceptance
+
+The repository shall contain and maintain:
+
+- README.md
+- PROJECT_REQUIREMENTS.md
+- DATABASE.md
+- UI_GUIDE.md
+- GAMIFICATION.md
+- API_SPECIFICATION.md
+- TECH_STACK.md
+- DEVELOPMENT_RULES.md
+- DEPLOYMENT.md
+- ROADMAP.md
+- CHANGELOG.md
+
+Documentation shall reflect the actual implementation.
+
+---
+
+# 10.39 Code Quality Acceptance
+
+The implementation shall:
+
+- Follow consistent naming conventions.
+- Use reusable components.
+- Avoid unnecessary duplication.
+- Use clear architecture.
+- Avoid unnecessary dependencies.
+- Follow the project's development rules.
+- Keep business logic separated from presentation where appropriate.
+
+---
+
+# 10.40 Testing Acceptance
+
+The project shall include appropriate testing for critical functionality.
+
+At minimum, testing shall cover:
+
+- Authentication
+- Authorization
+- RLS
+- Student creation
+- Group creation
+- Attendance
+- Homework
+- Points
+- XP
+- Ranking
+- Gamification
+- Analytics
+- Reports
+- Certificate generation
+- Telegram integration where enabled
+
+---
+
+# 10.41 Regression Acceptance
+
+A new feature shall not break existing core functionality.
+
+After significant changes, the following should be verified:
+
+- Login
+- Dashboard
+- Groups
+- Students
+- Journal
+- Attendance
+- Homework
+- Gamification
+- Analytics
+- Reports
+
+---
+
+# 10.42 Data Integrity Acceptance
+
+The system shall ensure:
+
+- No invalid foreign keys.
+- No unintended duplicate records.
+- No unauthorized data access.
+- No accidental loss of historical data.
+- No duplicate rewards caused by retries.
+- No inconsistent point totals.
+
+---
+
+# 10.43 Error Recovery Acceptance
+
+The application shall handle:
+
+- Network failure
+- Database failure
+- Authentication expiration
+- Telegram failure
+- File upload failure
+- Report generation failure
+
+The system shall provide appropriate user feedback.
+
+---
+
+# 10.44 Production Readiness Checklist
+
+Before production release, the following checklist shall be completed:
+
+### Authentication
+- [ ] Teacher login works.
+- [ ] Logout works.
+- [ ] Sessions are secure.
+
+### Groups
+- [ ] Group creation works.
+- [ ] Group editing works.
+- [ ] Group archiving works.
+
+### Students
+- [ ] Student creation works.
+- [ ] Student editing works.
+- [ ] Student search works.
+
+### Journal
+- [ ] Lessons display correctly.
+- [ ] Attendance works.
+- [ ] Homework works.
+- [ ] Points work.
+
+### Gamification
+- [ ] Points work.
+- [ ] XP works.
+- [ ] Levels work.
+- [ ] Rankings work.
+- [ ] Badges work.
+- [ ] Achievements work.
+- [ ] Streaks work.
+
+### Analytics
+- [ ] Weekly analytics work.
+- [ ] Monthly analytics work.
+- [ ] Student analytics work.
+- [ ] Group analytics work.
+
+### Reports
+- [ ] Reports generate correctly.
+- [ ] Filters work.
+- [ ] Export works.
+
+### Certificates
+- [ ] Templates work.
+- [ ] Certificates generate correctly.
+
+### Telegram
+- [ ] Integration works where enabled.
+- [ ] Secrets are protected.
+- [ ] Failure handling works.
+
+### Security
+- [ ] RLS is enabled.
+- [ ] Cross-teacher access is blocked.
+- [ ] Secrets are not committed.
+- [ ] Input validation works.
+
+### Deployment
+- [ ] Production build succeeds.
+- [ ] HTTPS works.
+- [ ] Environment variables are configured.
+- [ ] Database migrations are applied.
+- [ ] Backup/recovery process is documented.
+
+---
+
+# 10.45 Definition of Done
+
+The project shall be considered "Done" only when:
+
+1. All required core features are implemented.
+2. All critical workflows have been tested.
+3. Teacher data isolation has been verified.
+4. RLS policies have been verified.
+5. Database integrity has been verified.
+6. Gamification calculations work correctly.
+7. Analytics produce accurate results.
+8. Reports generate correctly.
+9. The Journal is fast and usable.
+10. Uzbek and English localization works.
+11. Production deployment works.
+12. Environment variables are securely configured.
+13. No critical security issues remain.
+14. No critical data-loss issues remain.
+15. Documentation is updated.
+16. The application is stable enough for real teacher usage.
+
+---
+
+# 10.46 Final Acceptance Principle
+
+The project shall not be considered complete merely because:
+
+- The UI looks finished.
+- Pages exist.
+- Buttons are visible.
+- Mock data is displayed.
+
+The system is complete only when the underlying functionality works with real persistent data.
+
+The final implementation must provide:
+
+REAL DATA
+
++
+
+REAL DATABASE
+
++
+
+REAL AUTHENTICATION
+
++
+
+REAL SECURITY
+
++
+
+REAL GAMIFICATION
+
++
+
+REAL ANALYTICS
+
++
+
+REAL REPORTING
+
++
+
+REAL DEPLOYMENT
+
+---
+
+# 10.47 Final Project Principle
+
+The English Teacher Gamification System shall be:
+
+FAST.
+
+SIMPLE.
+
+RELIABLE.
+
+SECURE.
+
+TEACHER-FOCUSED.
+
+The application shall solve real classroom management problems without unnecessary technical or visual complexity.
+
+---
+
+**End of Part 10 – Acceptance Criteria**
+
+---
+
+# END OF PROJECT REQUIREMENTS
+
+
