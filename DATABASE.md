@@ -1,16 +1,26 @@
-# Database Documentation
+DATABASE.md — FINAL DATABASE DOCUMENTATION PROMPT
+English Teacher Gamification System
+Version: 1.0
+Status: Implementation Specification
 
-# Section 1 — Database Overview
+IMPORTANT IMPLEMENTATION RULE:
+This document is the authoritative database specification for the project.
+The implementation must follow this document exactly.
+Do not invent missing tables, fields, relationships, security rules, business rules, or alternative architecture when a requirement is defined here.
+If an implementation detail is genuinely unspecified, choose the simplest PostgreSQL/Supabase-compatible solution and document the decision in the migration or technical notes.
 
----
+============================================================
+SECTION 1 — DATABASE OVERVIEW
+============================================================
 
 ## 1.1 Purpose
 
-The database is the central data layer of the English Teacher Gamification System.
+The database is the central persistent data layer of the English Teacher Gamification System.
 
-It shall provide reliable, secure, and structured storage for:
+It shall provide reliable, secure, structured storage for:
 
 - Teacher accounts
+- Teacher settings
 - Groups
 - Students
 - Lessons
@@ -33,69 +43,72 @@ It shall provide reliable, secure, and structured storage for:
 - Notifications
 - Activity Logs
 - Audit Logs
-- Import and Export records
+- Import records
+- Export records
+- Stored file metadata
+- System and gamification configuration
 
-The database shall act as the authoritative source of truth for application data.
+PostgreSQL shall be the authoritative source of truth.
 
----
+## 1.2 Technology
 
-## 1.2 Database Technology
+Primary database:
 
-The primary database technology shall be:
+PostgreSQL
 
-**PostgreSQL**
+Preferred managed platform:
 
-The preferred managed database platform shall be:
+Supabase
 
-**Supabase**
+Preferred supporting services:
 
-The database architecture shall remain compatible with standard PostgreSQL principles and SQL syntax wherever practical.
+- Supabase Authentication
+- Supabase Storage
+- Supabase Row Level Security
+- Supabase Edge Functions when server-side execution is required
 
----
+The schema must remain compatible with standard PostgreSQL principles.
 
 ## 1.3 Database Philosophy
 
-The database shall follow these principles:
+The database shall prioritize:
 
-1. Data integrity first.
-2. Security at the database level.
-3. Historical data preservation.
-4. Clear relationships between entities.
-5. Minimal duplication of authoritative data.
-6. Efficient queries.
-7. Simple architecture.
-8. Easy maintenance.
-9. Version-controlled migrations.
-10. Scalability without unnecessary complexity.
+1. Data integrity
+2. Database-level security
+3. Historical preservation
+4. Clear relationships
+5. Minimal duplication
+6. Query efficiency
+7. Simple architecture
+8. Maintainability
+9. Version-controlled migrations
+10. Appropriate scalability
 
----
+## 1.4 Source of Truth
 
-## 1.4 Database as the Source of Truth
+The database is authoritative.
 
-PostgreSQL shall be the authoritative source of application data.
-
-The following shall not replace the database as the source of truth:
+The following must never become the authoritative source:
 
 - Frontend state
-- Browser localStorage
-- Browser session data
-- Cached analytics
+- localStorage
+- browser session state
 - Telegram messages
-- Exported files
-- Generated reports
+- cached analytics
+- exported files
+- generated reports
 
-Cached or derived data may be used for performance, but it must always be possible to regenerate it from authoritative database records.
+Derived or cached values must be reproducible from authoritative records.
 
----
+## 1.5 Project Scale
 
-## 1.5 Initial Scale
+The initial system shall support:
 
-The initial database shall be designed for approximately:
-
-- Up to 20 teachers
+- Maximum 40 teacher accounts
 - Multiple groups per teacher
 - Multiple students per group
 - Multiple lessons per group
+- Long-term academic history
 - Long-term attendance history
 - Homework history
 - Payment history
@@ -103,184 +116,91 @@ The initial database shall be designed for approximately:
 - Analytics history
 - Activity history
 
-The architecture shall provide sufficient capacity for this scale without introducing unnecessary enterprise infrastructure.
+The architecture must not introduce enterprise infrastructure without a real requirement.
 
----
+## 1.6 Multi-Tenant Ownership
 
-## 1.6 Multi-Tenant Data Model
+The system uses logical teacher-level multi-tenancy.
 
-The application shall use logical teacher-level data isolation.
-
-Each teacher shall own their application data.
-
-The primary ownership relationship shall be:
+Primary ownership hierarchy:
 
 Teacher
-↓
-Groups
-↓
-Students
-↓
-Academic Records
+  -> Groups
+      -> Students
+          -> Academic Records
 
-Teacher-owned data shall include, where applicable:
+Teacher-owned data must be traceable to the authenticated teacher either directly through teacher_id or through a securely validated ownership relationship.
 
-- Groups
-- Students
-- Lessons
-- Attendance
-- Homework
-- Payments
-- Gamification records
-- Certificates
-- Analytics
-- Reports
-- Teacher Notes
-- Notifications
-- Activity Logs
+Frontend filtering alone is never sufficient for tenant isolation.
 
----
+## 1.7 Historical Data
 
-## 1.7 Data Ownership Principle
+Historical records with academic, financial, analytical, or gamification value must be preserved.
 
-Every teacher-owned record shall be traceable to the authenticated teacher either:
-
-- Directly through `teacher_id`, or
-- Indirectly through a securely validated relationship.
-
-The database shall never rely only on frontend filtering to enforce ownership.
-
----
-
-## 1.8 Historical Data Principle
-
-Historical records shall be preserved whenever they have analytical, financial, academic, or gamification value.
-
-The following data shall remain historically accessible:
+Important historical records include:
 
 - Attendance
 - Homework
 - Payments
 - Point transactions
 - XP transactions
-- Levels
+- Level history
 - Badges
 - Achievements
-- Streaks
+- Streak history
 - Certificates
-- Activity Logs
+- Activity logs
+- Audit logs
 
-Deleting or archiving an active entity must not unnecessarily destroy its historical records.
+Archiving or deactivating an entity must not unnecessarily destroy historical records.
 
----
+## 1.8 Authoritative vs Derived Data
 
-## 1.9 Derived Data Principle
-
-The system shall distinguish between:
-
-### Authoritative Data
-
-Data directly representing an actual event or user action.
+Authoritative data represents actual events or user actions.
 
 Examples:
 
-- Attendance record
-- Payment record
+- Attendance event
 - Homework evaluation
+- Payment
 - Point transaction
 - XP transaction
+- Certificate generation event
 
-### Derived Data
-
-Data calculated from authoritative records.
+Derived data is calculated from authoritative records.
 
 Examples:
 
 - Current points
+- Current XP
 - Ranking
 - Attendance percentage
 - Monthly statistics
 - Achievement progress
 - Trend indicators
 
-Derived data may be cached or stored for performance, but the authoritative records must remain available.
+Derived data may be cached for performance, but the source records must remain available.
 
----
+## 1.9 Transactional Integrity
 
-## 1.10 Transactional Integrity
-
-Operations that modify multiple related records shall use database transactions where required.
+Operations that modify multiple related records must be atomic where appropriate.
 
 Example:
 
-Attendance update:
+Attendance event
+  -> Attendance record
+  -> Point transaction
+  -> XP transaction
+  -> Achievement evaluation
+  -> Streak evaluation
+  -> Analytics update
+  -> Activity log
 
-Attendance
-↓
-Point Transaction
-↓
-XP Transaction
-↓
-Achievement Progress
-↓
-Analytics Update
-↓
-Activity Log
+A failure in a critical transaction must not leave an inconsistent partial state where practical.
 
-If a critical multi-step operation fails, the database shall prevent an inconsistent partial state where practical.
+## 1.10 Infrastructure Scope
 
----
-
-## 1.11 Security Principle
-
-Database security shall be enforced at the database level.
-
-The application shall use:
-
-- Authentication
-- Authorization
-- Row Level Security
-- Foreign Key Constraints
-- Unique Constraints
-- Input Validation
-- Secure Database Functions
-
-Frontend restrictions shall not be considered a sufficient security mechanism.
-
----
-
-## 1.12 Performance Principle
-
-The database shall be optimized for the application's most frequently used workflows.
-
-Priority shall be given to:
-
-1. Journal loading
-2. Attendance updates
-3. Homework updates
-4. Student search
-5. Dashboard statistics
-6. Rankings
-7. Analytics
-
-Database queries shall avoid unnecessary data retrieval.
-
----
-
-## 1.13 Infrastructure Principle
-
-The initial implementation shall use lightweight infrastructure.
-
-Preferred stack:
-
-- PostgreSQL
-- Supabase
-- Supabase Authentication
-- Supabase Storage
-- Supabase Row Level Security
-- Supabase Edge Functions where server-side logic is required
-
-The system shall not require:
+Do not require:
 
 - Microservices
 - Kubernetes
@@ -289,1398 +209,1572 @@ The system shall not require:
 - Separate analytics databases
 - Message queues
 
-unless future scale creates a genuine technical requirement.
+unless future requirements prove they are necessary.
 
----
+============================================================
+SECTION 2 — DATABASE ARCHITECTURE
+============================================================
 
-## 1.14 Migration-Based Development
+## 2.1 Architecture
 
-All database structure changes shall be implemented through version-controlled migrations.
-
-Examples:
-
-```text
-supabase/
-└── migrations/
-    ├── 001_initial_schema.sql
-    ├── 002_rls_policies.sql
-    ├── 003_database_functions.sql
-    └── ...
-
-# Section 2 — Database Architecture
-
----
-
-## 2.1 Purpose
-
-This section defines the overall database architecture of the English Teacher Gamification System.
-
-The architecture shall define how the following components interact:
-
-- Frontend Application
-- Supabase Authentication
-- PostgreSQL Database
-- Row Level Security
-- Supabase Storage
-- Server-side Functions
-- External Integrations
-- Analytics and Reporting
-
-The architecture shall remain lightweight and appropriate for the initial scale of the application.
-
----
-
-## 2.2 High-Level Architecture
-
-The primary architecture shall follow:
+Primary architecture:
 
 Teacher
-↓
-Frontend Application
-↓
-Authentication
-↓
-Supabase API / Server Functions
-↓
-PostgreSQL Database
-↓
-Storage / External Integrations
+  -> Frontend Application
+  -> Supabase Authentication
+  -> Supabase API / secure server functions
+  -> PostgreSQL
+  -> Supabase Storage / external integrations
 
-The database shall remain the central persistent data layer.
+PostgreSQL remains the central persistent data layer.
 
----
+## 2.2 Components
 
-## 2.3 Architecture Components
-
-The database architecture shall contain the following primary components.
-
-### 1. Supabase Authentication
+### Supabase Authentication
 
 Responsible for:
 
-- Teacher authentication
-- User sessions
-- Identity management
+- Teacher identity
+- Login
+- Sessions
 - Authentication state
 
-Authentication credentials shall not be stored directly in application tables.
+Authentication credentials must not be duplicated in application tables.
 
----
-
-### 2. PostgreSQL Database
+### PostgreSQL
 
 Responsible for:
 
-- Application data
+- Application records
 - Relationships
-- Transactions
 - Constraints
+- Transactions
 - Historical records
-- Gamification data
-- Analytics source data
+- Gamification records
+- Reporting source data
 
-PostgreSQL shall be the primary source of truth.
-
----
-
-### 3. Row Level Security
+### RLS
 
 Responsible for:
 
 - Teacher data isolation
-- Authorization at database level
-- Protection of teacher-owned records
+- Database-level authorization
+- Cross-tenant protection
 
-RLS shall prevent unauthorized access even if a user attempts to manipulate frontend requests.
+### Supabase Storage
 
----
+Responsible for:
 
-### 4. Supabase Storage
-
-Responsible for storing files such as:
-
-- Certificate templates
-- Generated certificates
+- Certificate files
+- Certificate templates where stored as files
 - Export files
-- Temporary import files where required
+- Import files where required
+- Other application-managed files
 
-The database shall store metadata and references to stored files.
+Relational tables store file metadata and references, not large binary content where Storage is appropriate.
 
----
+### Server-side Functions
 
-### 5. Server-side Functions
-
-Server-side functions shall be used when an operation requires:
+Use Edge Functions or equivalent secure server-side logic for:
 
 - Private credentials
-- External API communication
-- Sensitive business logic
 - Telegram integration
+- Sensitive external API calls
 - Secure file processing
-- Operations that should not run in the browser
+- Operations requiring privileged server execution
 
-Server-side functions may use Supabase Edge Functions.
+### Frontend
 
----
+Responsible for:
 
-### 6. Frontend Application
+- UI
+- Input collection
+- Data display
+- Requests
+- Analytics display
+- Gamification display
 
-The frontend shall communicate with the database through secure APIs and Supabase services.
+The frontend must never bypass database security.
 
-The frontend shall:
+## 2.3 Logical Layers
 
-- Display data
-- Collect teacher input
-- Request data
-- Submit changes
-- Display analytics
-- Display gamification information
+1. Identity
+2. Academic Structure
+3. Academic Activity
+4. Finance
+5. Gamification
+6. Documents
+7. Analytics and Reporting
+8. System Activity
+9. Configuration
 
-The frontend shall not bypass database security.
-
----
-
-## 2.4 Logical Data Layers
-
-The database shall be logically organized into the following data layers.
-
-### Layer 1 — Identity
-
-Contains:
-
-- Authentication identity
-- Teacher profile
-- Teacher settings
-
----
-
-### Layer 2 — Academic Structure
-
-Contains:
-
-- Groups
-- Students
-- Lessons
-
----
-
-### Layer 3 — Academic Activity
-
-Contains:
-
-- Attendance
-- Homework
-- Teacher Notes
-
----
-
-### Layer 4 — Financial Data
-
-Contains:
-
-- Payments
-- Payment History
-- Financial Status
-
----
-
-### Layer 5 — Gamification
-
-Contains:
-
-- Points
-- XP
-- Levels
-- Rankings
-- Badges
-- Achievements
-- Streaks
-- Rewards
-
----
-
-### Layer 6 — Documents
-
-Contains:
-
-- Certificate Templates
-- Certificates
-- Export Records
-
----
-
-### Layer 7 — Analytics
-
-Contains:
-
-- Statistics
-- Aggregated Data
-- Trends
-- Report Data
-
----
-
-### Layer 8 — System Activity
-
-Contains:
-
-- Notifications
-- Activity Logs
-- Audit Logs
-- System Events
-
----
-
-## 2.5 Core Data Flow
-
-The primary application data flow shall follow:
+## 2.4 Data Flow
 
 Teacher
-↓
-Group
-↓
-Student
-↓
-Lesson
-↓
-Attendance / Homework
-↓
-Transactions
-↓
-Gamification
-↓
-Analytics
-↓
-Reports
-
-This flow shall maintain traceability from an individual teacher action to the resulting statistical and gamification changes.
-
----
-
-## 2.6 Example Attendance Data Flow
-
-When a teacher marks a student as Present:
-
-Teacher
-↓
-Journal
-↓
-Attendance Record
-↓
-Point Transaction
-↓
-XP Transaction
-↓
-Achievement Evaluation
-↓
-Analytics Update
-↓
-Activity Log
-
-The exact gamification effects shall follow the rules defined in `GAMIFICATION.md`.
-
----
-
-## 2.7 Example Homework Data Flow
-
-When a teacher evaluates homework:
-
-Teacher
-↓
-Homework Evaluation
-↓
-Homework Status
-↓
-Point Transaction
-↓
-XP Transaction
-↓
-Achievement Evaluation
-↓
-Analytics Update
-↓
-Activity Log
-
-The system shall preserve the original homework event and the resulting transactions.
-
----
-
-## 2.8 Example Payment Data Flow
-
-When a teacher records a payment:
-
-Teacher
-↓
-Payment Record
-↓
-Payment Status
-↓
-Relevant Statistics
-↓
-Activity Log
+  -> Group
+  -> Student
+  -> Lesson
+  -> Attendance / Homework / Payment
+  -> Transactions
+  -> Gamification
+  -> Analytics
+  -> Reports
 
-Payment information shall remain independent from gamification unless explicitly configured by the business rules.
+Every important teacher action should remain traceable to the resulting records.
 
----
+## 2.5 Business Logic Boundary
 
-## 2.9 Example Certificate Data Flow
+Database responsibilities:
 
-When a teacher generates a certificate:
+- Integrity
+- Constraints
+- Ownership enforcement
+- Atomic transactions
+- Deterministic low-level calculations
+- Required audit records
+- Timestamp management
 
-Teacher
-↓
-Certificate Request
-↓
-Certificate Record
-↓
-Template
-↓
-File Generation
-↓
-Storage
-↓
-Certificate File Reference
-↓
-Activity Log
+Application/backend responsibilities:
 
-The generated file shall be stored separately from the relational database where appropriate.
+- Complex workflows
+- UI workflows
+- Telegram message formatting
+- External integrations
+- Complex orchestration
+- Non-critical presentation logic
 
----
+Gamification rules must remain consistent with GAMIFICATION.md.
 
-## 2.10 Authentication Architecture
+============================================================
+SECTION 3 — CORE ENTITIES
+============================================================
 
-Authentication shall use Supabase Authentication.
+## 3.1 Entity Principles
 
-The relationship shall be:
+Every entity must:
 
-Teacher
-↓
-Supabase Auth User
-↓
-Teacher Profile
-↓
-Teacher-owned Records
+1. Have one clear responsibility.
+2. Use explicit relationships.
+3. Use foreign keys.
+4. Preserve historical meaning.
+5. Respect teacher ownership.
+6. Separate authoritative and derived data.
+7. Prevent duplicate authoritative events.
+8. Remain PostgreSQL-compatible.
+9. Avoid unnecessary complexity.
 
-The authenticated user's unique identity shall be used to determine database access.
+## 3.2 Identity Entities
 
----
+### Teacher
 
-## 2.11 Teacher Profile Architecture
+Application profile linked to the authenticated Supabase user.
 
-Authentication identity and application profile data shall remain logically separate.
+Stores:
 
-Authentication system:
+- id
+- profile information
+- language
+- account status
+- timestamps
 
-- User ID
-- Email
-- Authentication state
-
-Application profile:
-
-- Display name
-- Language
-- Preferences
-- Account status
-- Application-specific settings
-
-The application shall reference the authenticated user through a stable identifier.
-
----
-
-## 2.12 Ownership Architecture
-
-Teacher ownership shall be enforced through relationships.
-
-Primary pattern:
-
-```text
-teacher
-   |
-   └── groups
-          |
-          └── students
-                 |
-                 ├── attendance
-                 ├── homework
-                 ├── payments
-                 ├── transactions
-                 ├── achievements
-                 └── certificates
-
-# Section 3 — Core Entities
-
----
-
-## 3.1 Purpose
-
-This section defines the core database entities of the English Teacher Gamification System.
-
-Each entity represents a major business object or persistent concept within the application.
-
-The purpose of this section is to establish:
-
-- Core entities
-- Entity responsibilities
-- Ownership
-- Primary relationships
-- Data boundaries
-- Entity dependencies
-
-Detailed table schemas and column definitions shall be specified in Section 4 — Table Definitions.
-
----
-
-## 3.2 Entity Design Principles
-
-The database shall follow these principles:
-
-1. Each entity shall have a clearly defined responsibility.
-2. Entities shall not contain unrelated data.
-3. Relationships shall be represented through foreign keys.
-4. Historical records shall remain traceable.
-5. Teacher ownership shall be enforceable.
-6. Authoritative data shall be separated from derived data.
-7. Gamification events shall remain traceable.
-8. Duplicate authoritative records shall be prevented.
-9. Entities shall be designed for PostgreSQL.
-10. The schema shall remain simple enough for the initial project scale.
-
----
-
-# 3.3 Identity Entities
-
-## 3.3.1 Teacher
-
-Represents the application-level profile of an authenticated teacher.
-
-Responsibilities:
-
-- Store teacher profile information.
-- Store application preferences.
-- Define ownership of teacher-specific data.
-- Provide the root ownership relationship for application records.
-
-Primary relationship:
-
-```text
-Teacher
-├── Groups
-├── Students
-├── Lessons
-├── Payments
-├── Certificates
-├── Reports
-├── Activity Logs
-└── Settings
-
-# Section 4 — Table Definitions
-
----
-
-## 4.1 Purpose
-
-This section defines the physical PostgreSQL tables required by the English Teacher Gamification System.
-
-Each table shall have:
-
-- A clearly defined responsibility
-- A primary key
-- Appropriate foreign keys
-- Required timestamps
-- Appropriate constraints
-- Appropriate indexes
-- Teacher ownership where applicable
-
-The final PostgreSQL implementation shall follow these definitions.
-
----
-
-# 4.2 Identity Tables
-
-## 4.2.1 `teachers`
-
-Stores the application-level profile of each teacher.
-
-| Column | Type | Required | Description |
-|---|---|---:|---|
-| id | UUID | Yes | Primary key and reference to authenticated user |
-| full_name | TEXT | Yes | Teacher display name |
-| email | TEXT | No | Application-level email reference |
-| language | TEXT | Yes | Preferred interface language |
-| status | TEXT | Yes | Account status |
-| created_at | TIMESTAMPTZ | Yes | Creation timestamp |
-| updated_at | TIMESTAMPTZ | Yes | Last update timestamp |
-
-Allowed `status` values:
-
-- `active`
-- `suspended`
-- `archived`
-
----
-
-## 4.2.2 `teacher_settings`
+### Teacher Settings
 
 Stores teacher-specific application preferences.
 
-| Column | Type | Required | Description |
-|---|---|---:|---|
-| id | UUID | Yes | Primary key |
-| teacher_id | UUID | Yes | Teacher owner |
-| language | TEXT | Yes | Interface language |
-| default_group_id | UUID | No | Default group |
-| notification_enabled | BOOLEAN | Yes | Notification preference |
-| created_at | TIMESTAMPTZ | Yes | Creation timestamp |
-| updated_at | TIMESTAMPTZ | Yes | Last update timestamp |
+## 3.3 Academic Entities
 
-Constraint:
+### Group
 
-```text
-UNIQUE(teacher_id)
+Teacher-owned teaching group.
 
-# Section 5 — Relationships & Foreign Keys
+Stores:
 
----
+- Group identity
+- Name
+- Description
+- Level/category if required
+- Status
+- Schedule metadata if required
+- Timestamps
 
-## 5.1 Purpose
+### Student
 
-This section defines the relationships between database entities and the foreign key rules used to maintain referential integrity.
+Student belonging to a teacher and group.
 
-The database shall use PostgreSQL foreign keys to ensure that related records cannot reference non-existent entities.
+Stores:
 
-All relationships shall respect teacher ownership and the application's multi-tenant data isolation model.
+- Identity/profile information required by the application
+- Group ownership
+- Status
+- Enrollment metadata
+- Timestamps
 
----
+A student must not have a login account.
 
-# 5.2 Relationship Principles
+### Lesson
 
-The database shall follow these principles:
+Represents a lesson/class session for a group.
 
-1. Every child record must reference an existing parent record.
-2. Teacher-owned data must be associated with the correct `teacher_id`.
-3. Records belonging to a deleted or archived parent must follow the defined deletion policy.
-4. Historical records should normally be preserved.
-5. Foreign keys shall be indexed where required for query performance.
-6. Cross-teacher relationships shall not be permitted.
-7. Application logic and database constraints shall work together to enforce ownership.
+Stores:
 
----
+- Group
+- Teacher ownership
+- Date/time
+- Lesson status
+- Topic/notes if required
+- Timestamps
 
-# 5.3 Teacher Relationships
+### Journal Record
 
-The `teachers` table is the primary ownership entity for teacher-specific data.
+Represents the classroom journal context connecting lesson, group, student, and academic activity.
 
-### Main relationships
+The final implementation must avoid duplicate authoritative attendance/journal events.
 
-```text
-teachers
-   ├── teacher_settings
-   ├── groups
-   ├── students
-   ├── lessons
-   ├── attendance_records
-   ├── homework_assignments
-   ├── homework_results
-   ├── payments
-   ├── point_transactions
-   ├── xp_transactions
-   ├── certificate_templates
-   ├── certificates
-   ├── teacher_notes
-   ├── activity_logs
-   ├── audit_logs
-   ├── notifications
-   ├── reports
-   ├── import_jobs
-   ├── export_jobs
-   └── stored_files
+## 3.4 Attendance Entities
 
-# Section 6 — Row-Level Security (RLS) & Data Isolation
+### Attendance Record
 
----
+Stores the student's attendance state for a lesson.
 
-## 6.1 Purpose
+Required statuses:
 
-This section defines the database-level security model for protecting teacher-owned data.
+- present
+- absent_with_reason
+- absent_without_reason
+- late
 
-The system shall ensure that:
+The exact gamification effects are defined in GAMIFICATION.md.
 
-- Teachers can access only their own data.
-- Teachers cannot access another teacher's groups.
-- Teachers cannot access another teacher's students.
-- Teachers cannot access another teacher's journal records.
-- Teachers cannot access another teacher's gamification data.
-- Teachers cannot access another teacher's reports or files.
-- Database-level security shall not rely only on frontend restrictions.
+## 3.5 Homework Entities
 
-Supabase PostgreSQL Row-Level Security (RLS) shall be used as the primary database-level data isolation mechanism.
+### Homework Assignment
 
----
+Represents homework assigned to a group/student.
 
-# 6.2 Multi-Tenant Data Model
+### Homework Result / Evaluation
 
-The application shall use a teacher-based multi-tenant architecture.
+Represents the student's evaluated homework outcome.
 
-Each teacher represents an isolated data owner.
+The system must preserve the original assignment and evaluation history.
 
-Conceptually:
+Required homework status concepts must remain consistent with GAMIFICATION.md, including configured statuses such as:
 
-```text
-Teacher A
-│
-├── Groups
-├── Students
-├── Lessons
-├── Attendance
-├── Homework
-├── Payments
-├── Points
-├── XP
-├── Badges
-├── Achievements
-├── Reports
-└── Files
+- assigned
+- completed
+- perfect
 
-Teacher B
-│
-├── Groups
-├── Students
-├── Lessons
-├── Attendance
-├── Homework
-├── Payments
-├── Points
-├── XP
-├── Badges
-├── Achievements
-├── Reports
-└── Files
+## 3.6 Finance Entities
 
-# Section 7 — Indexes & Query Performance
+### Payment
 
----
+Represents a student payment.
 
-## 7.1 Purpose
+Payment records must remain independent from gamification unless explicitly configured.
 
-This section defines the database indexing and query-performance requirements for the English Teacher Gamification System.
+Payment history must be preserved.
 
-The database must remain fast when teachers have:
+## 3.7 Gamification Entities
 
-- Multiple groups
-- Hundreds of students
-- Large journal histories
-- Many attendance records
-- Large homework histories
-- Extensive point and XP transactions
-- Long-term activity logs
+The database shall support:
 
-Indexes shall be designed around actual application query patterns rather than being added indiscriminately.
+- Point transactions
+- XP transactions
+- Level definitions
+- Student level history/current level
+- Rankings
+- Badge definitions
+- Student badge awards
+- Achievement definitions
+- Student achievement progress/awards
+- Streaks
+- Reward definitions
+- Reward claims/redemptions where required
 
----
+Transactions must be traceable to their source event where practical.
 
-# 7.2 General Indexing Principles
+## 3.8 Document Entities
 
-The database shall follow these rules:
+- Certificate templates
+- Certificates
+- Stored file metadata
+- Import records
+- Export records
 
-1. Primary keys are automatically indexed.
-2. Frequently queried foreign keys should be indexed.
-3. Teacher ownership columns should be indexed.
-4. Columns frequently used in filtering and sorting should be indexed.
-5. Composite indexes should reflect real query patterns.
-6. Duplicate or unnecessary indexes shall be avoided.
-7. Indexes shall be reviewed using query performance analysis.
-8. Large historical tables shall receive particular attention.
+## 3.9 Analytics Entities
 
-Indexes must improve read performance without unnecessarily increasing write overhead.
+Analytics should primarily be derived from authoritative records.
 
----
+Persisted aggregates may be introduced only when justified by performance.
 
-# 7.3 Primary Key Indexes
+## 3.10 System Entities
 
-Every table shall use a primary key.
+- Notifications
+- Activity logs
+- Audit logs
+- Import jobs
+- Export jobs
+- System events
+- Configuration
 
-Example:
+============================================================
+SECTION 4 — COMPLETE TABLE DEFINITIONS
+============================================================
 
-```sql
-id UUID PRIMARY KEY DEFAULT gen_random_uuid()
+## 4.1 Table Definition Standard
 
-# Section 8 — Data Integrity, Constraints & Validation
+Every required table must be documented and implemented with:
 
----
-
-## 8.1 Purpose
-
-This section defines the database constraints and validation rules required to maintain accurate, consistent, and reliable application data.
-
-The database shall prevent invalid states wherever possible.
-
-Data integrity shall be enforced through:
-
-- PostgreSQL constraints
+- Table name
+- Purpose
+- Primary key
+- Columns
+- PostgreSQL data types
+- Nullable/non-nullable status
+- Default values
 - Foreign keys
 - Unique constraints
-- NOT NULL constraints
-- CHECK constraints
+- Check constraints
+- Indexes
+- Delete behavior
+- Update behavior
+- Teacher ownership
+- Historical behavior
+- Audit requirements
+
+No required entity may remain only conceptual.
+
+## 4.2 Required Table Inventory
+
+The implementation must provide an explicit schema for, at minimum, the following tables or clearly documented equivalent normalized structures:
+
+### Identity
+
+- teachers
+- teacher_settings
+
+### Academic
+
+- groups
+- students
+- lessons
+- journal_records
+- attendance_records
+- teacher_notes
+
+### Homework
+
+- homework_assignments
+- homework_results
+
+### Finance
+
+- payments
+
+### Gamification
+
+- point_transactions
+- xp_transactions
+- level_definitions
+- student_levels
+- ranking snapshots/derived structures only if needed
+- badge_definitions
+- student_badges
+- achievement_definitions
+- student_achievements
+- streaks
+- reward_definitions
+- reward_claims if rewards are claimable
+
+### Certificates
+
+- certificate_templates
+- certificates
+
+### Analytics / Reporting
+
+- reports
+- persisted analytics tables only where justified
+
+### System
+
+- notifications
+- activity_logs
+- audit_logs
+- import_jobs
+- export_jobs
+- stored_files
+
+### Configuration
+
+- gamification configuration/rules where required
+- system configuration where required
+
+If a table is intentionally omitted, the reason and replacement structure must be explicitly documented.
+
+## 4.3 Standard Column Rules
+
+Unless a specific table requires otherwise:
+
+- Primary keys use UUID.
+- Primary keys use gen_random_uuid().
+- Timestamps use TIMESTAMPTZ.
+- created_at is NOT NULL.
+- updated_at is NOT NULL where records are mutable.
+- Foreign keys use UUID.
+- Status fields use controlled values.
+- Monetary amounts use NUMERIC with suitable precision/scale.
+- Counts use INTEGER.
+- Boolean fields use BOOLEAN with explicit defaults.
+
+## 4.4 Teacher Table
+
+teachers:
+
+- id UUID PRIMARY KEY
+- full_name TEXT NOT NULL
+- email TEXT NULL if duplicated from auth
+- language TEXT NOT NULL
+- status TEXT NOT NULL
+- created_at TIMESTAMPTZ NOT NULL
+- updated_at TIMESTAMPTZ NOT NULL
+
+Allowed status:
+
+- active
+- suspended
+- archived
+
+id must correspond to the authenticated Supabase user ID.
+
+## 4.5 Teacher Settings
+
+teacher_settings:
+
+- id UUID PRIMARY KEY
+- teacher_id UUID NOT NULL UNIQUE
+- language TEXT NOT NULL
+- default_group_id UUID NULL
+- notification_enabled BOOLEAN NOT NULL DEFAULT true
+- created_at TIMESTAMPTZ NOT NULL
+- updated_at TIMESTAMPTZ NOT NULL
+
+default_group_id must reference a group owned by the same teacher.
+
+## 4.6 Required Table Completion Rule
+
+Before implementation is considered complete, every table listed in Section 4.2 must have a full field-level specification.
+
+The AI/database implementer must not invent unspecified business fields silently.
+
+============================================================
+SECTION 5 — RELATIONSHIPS & FOREIGN KEYS
+============================================================
+
+## 5.1 Relationship Rules
+
+1. Every child must reference an existing parent.
+2. Teacher ownership must be preserved across relationships.
+3. Cross-teacher relationships are prohibited.
+4. Foreign keys must be explicit.
+5. Delete behavior must be intentional.
+6. Historical records should normally use RESTRICT/soft archival rather than destructive cascading.
+7. Foreign key columns used in common queries must be indexed.
+
+## 5.2 Core Relationship Map
+
+teachers
+  -> teacher_settings (1:1)
+  -> groups (1:N)
+  -> students (1:N where direct ownership is stored or derived)
+  -> lessons (1:N)
+  -> payments (1:N)
+  -> certificates (1:N)
+  -> certificate_templates (1:N)
+  -> teacher_notes (1:N)
+  -> activity_logs (1:N)
+  -> audit_logs (1:N)
+  -> notifications (1:N)
+  -> reports (1:N)
+  -> import_jobs (1:N)
+  -> export_jobs (1:N)
+  -> stored_files (1:N)
+
+groups
+  -> students (1:N)
+  -> lessons (1:N)
+  -> homework_assignments (1:N)
+
+lessons
+  -> journal_records (1:N)
+  -> attendance_records (1:N)
+
+students
+  -> attendance_records (1:N)
+  -> homework_results (1:N)
+  -> payments (1:N)
+  -> point_transactions (1:N)
+  -> xp_transactions (1:N)
+  -> student_levels
+  -> student_badges (1:N)
+  -> student_achievements (1:N)
+  -> streaks (1:N)
+  -> certificates (1:N)
+  -> teacher_notes (1:N)
+
+## 5.3 Delete Rules
+
+Use conservative deletion policies.
+
+Examples:
+
+- Teacher deletion: normally prohibited or archival.
+- Group deletion: archive/deactivate when historical records exist.
+- Student deletion: archive/deactivate when history exists.
+- Lesson deletion: preserve historical records where required.
+- Attendance deletion: prohibited for finalized historical records unless an authorized correction workflow exists.
+- Payment deletion: prohibited or tightly controlled.
+- Point/XP transaction deletion: prohibited for finalized transactions; use reversal/correction records.
+- Audit log deletion: prohibited under normal application operation.
+
+Exact ON DELETE actions must be documented for every FK.
+
+## 5.4 Cross-Tenant Integrity
+
+A record must never be able to reference a parent belonging to another teacher.
+
+Where PostgreSQL constraints alone cannot enforce the complete ownership condition, use secure database functions, triggers, or backend validation together with RLS.
+
+============================================================
+SECTION 6 — ROW LEVEL SECURITY & TENANT ISOLATION
+============================================================
+
+## 6.1 RLS Requirement
+
+RLS is mandatory for all teacher-owned tables exposed through Supabase.
+
+Teachers may access only their own data.
+
+Students have no direct login and therefore no student RLS access model is required.
+
+## 6.2 RLS Coverage
+
+RLS must cover all applicable tables including:
+
+- teachers
+- teacher_settings
+- groups
+- students
+- lessons
+- journal_records
+- attendance_records
+- homework_assignments
+- homework_results
+- payments
+- point_transactions
+- xp_transactions
+- student_levels
+- student_badges
+- student_achievements
+- streaks
+- rewards/reward_claims
+- certificates
+- certificate_templates
+- teacher_notes
+- reports
+- notifications
+- activity_logs
+- audit_logs
+- import_jobs
+- export_jobs
+- stored_files
+
+System configuration tables that are not teacher-owned may use controlled read access instead.
+
+## 6.3 Policy Model
+
+For every teacher-owned table define:
+
+- SELECT policy
+- INSERT policy
+- UPDATE policy
+- DELETE policy
+
+Where deletion is prohibited, do not create a DELETE policy.
+
+The ownership condition must resolve through the authenticated user.
+
+Typical ownership path:
+
+auth.uid()
+  -> teachers.id
+  -> teacher_id
+or
+auth.uid()
+  -> teachers.id
+  -> groups.teacher_id
+  -> students.group_id
+  -> child record
+
+## 6.4 RLS Security Requirements
+
+- Default deny is preferred.
+- Frontend filtering is never security.
+- Service-role credentials must never be exposed to the browser.
+- Privileged functions must be tightly controlled.
+- SECURITY DEFINER functions must explicitly validate ownership and search_path.
+- Cross-tenant access must be impossible through ordinary authenticated requests.
+
+============================================================
+SECTION 7 — INDEXES & QUERY PERFORMANCE
+============================================================
+
+## 7.1 Principles
+
+Indexes shall be based on real query patterns.
+
+Required priorities:
+
+1. Journal loading
+2. Attendance updates
+3. Homework updates
+4. Student search
+5. Dashboard statistics
+6. Rankings
+7. Analytics
+8. Activity history
+
+## 7.2 Required Index Categories
+
+At minimum evaluate indexes for:
+
+- teacher_id
+- group_id
+- student_id
+- lesson_id
+- created_at
+- updated_at
+- date/time fields
+- status fields when selective
+- due_date
+- payment date
+- transaction date
+
+## 7.3 Composite Index Patterns
+
+Evaluate composite indexes such as:
+
+- groups(teacher_id, status)
+- students(teacher_id, group_id, status)
+- lessons(group_id, lesson_date)
+- attendance_records(student_id, lesson_id)
+- attendance_records(group_id, lesson_date) where supported by schema
+- homework_assignments(group_id, due_date)
+- homework_results(student_id, created_at)
+- point_transactions(student_id, created_at)
+- xp_transactions(student_id, created_at)
+- activity_logs(teacher_id, created_at)
+- notifications(teacher_id, created_at)
+
+Only create indexes justified by actual access patterns.
+
+## 7.4 Uniqueness and Indexes
+
+Use unique constraints to prevent duplicate authoritative events.
+
+Examples:
+
+- One attendance record per student per lesson.
+- One homework result per student per assignment unless the business rule explicitly permits multiple attempts.
+- One teacher_settings row per teacher.
+- One student badge award per applicable award event where appropriate.
+- Stable unique configuration identifiers.
+
+## 7.5 Query Rules
+
+- Select only required columns.
+- Use database-side filtering.
+- Avoid N+1 queries.
+- Paginate large result sets.
+- Use keyset/cursor pagination for large histories where beneficial.
+- Review expensive queries with EXPLAIN ANALYZE.
+- Do not bypass RLS for performance.
+
+============================================================
+SECTION 8 — DATA INTEGRITY, CONSTRAINTS & VALIDATION
+============================================================
+
+## 8.1 Constraint Hierarchy
+
+Use:
+
+- NOT NULL
+- PRIMARY KEY
+- FOREIGN KEY
+- UNIQUE
+- CHECK
+- RLS
+- Transactional validation
 - Backend validation
-- Row-Level Security
-- Transactional operations
 
-The frontend shall not be considered a sufficient data-integrity layer.
+## 8.2 Required Validation
 
----
+Required business-state validation includes:
 
-# 8.2 Data Integrity Principles
+Attendance:
 
-The database shall follow these principles:
+- present
+- absent_with_reason
+- absent_without_reason
+- late
 
-1. Invalid data should be rejected as early as possible.
-2. Referential integrity shall be enforced through foreign keys.
-3. Required fields shall use `NOT NULL`.
-4. Enumerated business states shall use controlled values.
-5. Duplicate records shall be prevented where uniqueness is required.
-6. Historical records shall not be silently overwritten.
-7. Related changes shall be performed transactionally.
-8. Business-critical calculations shall not depend only on frontend logic.
-9. Teacher ownership shall be validated before related records are created.
-10. Database constraints shall complement application-level validation.
+Teacher status:
 
----
+- active
+- suspended
+- archived
 
-# 8.3 NOT NULL Constraints
+All status values must use controlled values.
 
-Fields that are required for the correct operation of the system shall use:
+## 8.3 Numeric Validation
 
-```sql
-NOT NULL
+Where applicable:
 
-# Section 9 — Database Functions, Triggers & Automation
+- payment amount >= 0
+- points/XP amounts must follow transaction rules
+- counts >= 0
+- percentages must remain within 0–100
+- level numbers must be valid positive integers
+- dates must follow business chronology
 
----
+## 8.4 Duplicate Prevention
 
-## 9.1 Purpose
+Prevent duplicate authoritative records.
 
-This section defines the database functions, triggers, and automated database operations required by the English Teacher Gamification System.
+Examples:
 
-Database automation shall be used for operations that are:
+- duplicate attendance for the same student and lesson
+- duplicate payment identifiers where applicable
+- duplicate teacher settings
+- duplicate badge awards when the award is intended to be unique
 
-- Consistent
-- Deterministic
-- Closely related to database integrity
-- Required across multiple application entry points
-- Safer when executed atomically at the database level
+## 8.5 Historical Integrity
 
-Complex business workflows should remain in the application/backend layer unless there is a clear reason to execute them inside PostgreSQL.
+Historical transactions must not be silently overwritten.
 
----
+For point/XP corrections, prefer:
 
-# 9.2 Database Automation Principles
+original transaction
+  -> reversal/correction transaction
+  -> audit record
 
-The system shall follow these principles:
+rather than destructive editing.
 
-1. Database functions shall have a clearly defined responsibility.
-2. Triggers shall be used selectively.
-3. Critical integrity rules shall not depend only on frontend code.
-4. Functions must respect Row-Level Security where applicable.
-5. Security-sensitive functions shall use carefully controlled privileges.
-6. Functions shall not silently modify unrelated data.
-7. Recursive trigger behavior must be prevented.
-8. Complex workflows should normally remain in the backend.
-9. Every automated operation must be documented.
-10. Automated operations must be testable.
+## 8.6 Timestamp Integrity
 
----
+created_at is immutable.
 
-# 9.3 Function Categories
+updated_at changes only when a mutable record is modified.
 
-Database functions may be divided into:
+Use a centralized timestamp trigger/function where appropriate.
 
-```text
-1. Utility Functions
-2. Validation Functions
-3. Timestamp Functions
-4. Security Functions
-5. Aggregation Functions
-6. Gamification Functions
-7. Reporting Functions
+## 8.7 Ownership Validation
 
-# Section 10 — Database Security & Row-Level Security (RLS)
+A record cannot be inserted or updated if its referenced parent belongs to another teacher.
 
----
+This must be enforced beyond frontend validation.
 
-## 10.1 Purpose
+============================================================
+SECTION 9 — DATABASE FUNCTIONS, TRIGGERS & AUTOMATION
+============================================================
 
-This section defines the database security model for the English Teacher Gamification System.
+## 9.1 Principles
 
-The database must ensure that:
+Use database functions/triggers for:
 
-- Teachers can access only their own data.
-- Teachers cannot access another teacher's groups.
-- Teachers cannot access another teacher's students.
-- Teachers cannot modify records belonging to another teacher.
-- Students have no direct application login.
-- Sensitive database operations are protected.
-- Backend services cannot accidentally bypass ownership rules.
-- Historical and transactional data remains protected.
+- Integrity
+- Atomic deterministic operations
+- Shared validation
+- Timestamp maintenance
+- Security-sensitive checks
+- Small deterministic calculations
 
-Security shall be enforced at the database level in addition to application-level authorization.
+Keep complex orchestration in the application/backend layer.
 
----
+## 9.2 Recommended Function Categories
 
-# 10.2 Security Architecture
+1. Timestamp functions
+2. Ownership validation functions
+3. Security helper functions
+4. Deterministic aggregation functions
+5. Gamification transaction helpers where atomicity is required
+6. Reporting/query functions where justified
 
-The recommended security model is:
+## 9.3 Trigger Candidates
 
-```text
-User
-  ↓
+Appropriate trigger candidates include:
+
+- updated_at maintenance
+- ownership integrity checks
+- immutable audit requirements
+- deterministic derived synchronization only where necessary
+
+Do not use triggers for large, opaque business workflows.
+
+## 9.4 Gamification Transaction Rule
+
+Attendance/homework operations that create points and XP must be atomic when the business rules require it.
+
+The exact points and XP rules must come from GAMIFICATION.md.
+
+The database must not contain a second conflicting set of gamification rules.
+
+## 9.5 Function Security
+
+Every privileged function must:
+
+- Validate ownership
+- Use explicit privileges
+- Avoid exposing sensitive data
+- Use a safe search_path where applicable
+- Be documented
+- Be migration-controlled
+
+## 9.6 Trigger Safety
+
+Triggers must:
+
+- Have one clear purpose
+- Avoid recursion
+- Avoid hidden side effects
+- Be tested
+- Be documented
+
+============================================================
+SECTION 10 — DATABASE SECURITY ARCHITECTURE
+============================================================
+
+## 10.1 Security Model
+
+Security must use defense in depth:
+
 Authentication
-  ↓
-Authenticated User ID
-  ↓
-Row-Level Security
-  ↓
-Teacher Ownership
-  ↓
-Allowed Records
+  -> Authorization
+  -> RLS
+  -> Constraints
+  -> Secure functions
+  -> Restricted infrastructure access
+  -> Auditability
 
-# Section 11 — Database Seed Data & Initial Configuration
+## 10.2 Authentication
 
----
+Supabase Authentication manages teacher identity.
 
-## 11.1 Purpose
+Application tables reference the stable auth user UUID.
 
-This section defines the initial data and configuration required for the English Teacher Gamification System to operate correctly after database deployment.
+Passwords and authentication secrets must not be stored in application tables.
 
-Seed data must contain only system-level or predefined configuration data.
+## 10.3 Secrets
 
-User-generated production data must never be included in the default seed process.
+Never store in source code:
 
----
+- Supabase service-role keys
+- Telegram bot tokens
+- API keys
+- Database passwords
+- Private credentials
 
-# 11.2 Seed Data Principles
+Use environment variables or managed secrets.
 
-The seed system shall follow these principles:
+## 10.4 Privileges
 
-1. Seed data must be deterministic.
-2. Seed operations must be repeatable.
-3. Seed operations must not create duplicate records.
-4. Production user data must not be overwritten.
-5. System configuration must have stable identifiers.
-6. Seed data must be version-controlled.
-7. Development seed data must be separated from production seed data.
-8. Sensitive credentials must never be included in seed files.
+Use least privilege.
 
----
+Browser clients must not receive privileged database credentials.
 
-# 11.3 Seed Data Categories
+Service-role access must be limited to trusted server-side execution.
 
-The initial database may contain seed data for:
+## 10.5 Sensitive Data
 
-```text
-1. Gamification configuration
+Store only data necessary for the application.
+
+Do not store unnecessary sensitive personal information.
+
+## 10.6 Security Testing
+
+Before production:
+
+- Test cross-teacher SELECT
+- Test cross-teacher INSERT
+- Test cross-teacher UPDATE
+- Test cross-teacher DELETE
+- Test privileged function access
+- Test Storage access
+- Test archived record access
+- Test unauthorized IDs
+
+All must fail appropriately.
+
+============================================================
+SECTION 11 — SEED DATA & INITIAL CONFIGURATION
+============================================================
+
+## 11.1 Seed Principles
+
+Seed data must be:
+
+- Deterministic
+- Repeatable
+- Idempotent
+- Version-controlled
+- Safe for production
+- Free of secrets
+
+Production teacher/student data must not be part of default seed data.
+
+## 11.2 Seed Categories
+
+Seed/configuration data may include:
+
+1. Gamification rules
 2. Point rules
 3. XP rules
-4. Level thresholds
+4. Level definitions
 5. Badge definitions
 6. Achievement definitions
 7. Homework status definitions
-8. Attendance status definitions
-9. Payment status definitions
+8. Attendance statuses
+9. Payment statuses
 10. System configuration
 
-# Section 12 — Database Migrations & Version Control
+## 11.3 Configuration Ownership
 
----
+System configuration must be clearly separated from teacher-owned data.
 
-## 12.1 Purpose
+If teachers can customize a rule, define whether the rule is:
 
-This section defines how database schema changes, functions, triggers, indexes, constraints, RLS policies, and seed configuration are created, versioned, tested, and deployed.
+- global
+- teacher-specific
+- immutable after activation
+- versioned
 
-Every database structure change must be reproducible from the repository.
+## 11.4 Seed Separation
 
-The production database must never depend on undocumented manual changes.
+Use separate development/test seed data from production configuration.
 
----
+Do not overwrite production data during seed operations.
 
-# 12.2 Migration Principles
+============================================================
+SECTION 12 — MIGRATIONS & VERSION CONTROL
+============================================================
 
-Database migrations shall follow these principles:
+## 12.1 Migration Principles
 
-1. Every schema change must be version-controlled.
-2. Migrations must be executed in a deterministic order.
-3. Migrations must be reproducible.
-4. Production changes must use migrations.
-5. Manual production schema changes are prohibited unless explicitly authorized.
-6. Destructive migrations require additional review.
-7. Migrations must be tested before production deployment.
-8. Migration files must not contain secrets.
-9. Applied migrations must not be silently modified.
-10. The database schema must remain synchronized with the application code.
+All database changes must be version-controlled.
 
----
+No undocumented manual production schema changes.
 
-# 12.3 Migration Directory
+Migrations must be:
 
-Database migrations should be stored in a dedicated directory.
+- Ordered
+- Reproducible
+- Tested
+- Deterministic
+- Reviewable
 
-Recommended structure:
+## 12.2 Migration Scope
 
-```text
+Migrations must include changes to:
+
+- Tables
+- Columns
+- Foreign keys
+- Constraints
+- Indexes
+- Functions
+- Triggers
+- RLS policies
+- Seed/configuration data
+
+## 12.3 Directory
+
+Recommended:
+
 database/
-└── migrations/
-    ├── 001_initial_schema.sql
-    ├── 002_core_relationships.sql
-    ├── 003_gamification.sql
-    ├── 004_journal.sql
-    ├── 005_indexes.sql
-    ├── 006_integrity_constraints.sql
-    ├── 007_functions.sql
-    ├── 008_rls.sql
-    └── ...
-
-# Section 13 — Backup, Recovery & Disaster Recovery
-
----
-
-## 13.1 Purpose
-
-This section defines the backup, recovery, restoration, and disaster recovery requirements for the database.
-
-The system must be able to recover from:
-
-- Database failure
-- Accidental data deletion
-- Application errors
-- Failed migrations
-- Infrastructure failure
-- Storage failure
-- Security incidents
-- Deployment failures
-
-The recovery strategy must protect both system configuration and teacher-generated data.
-
----
-
-# 13.2 Backup Principles
-
-Database backups shall follow these principles:
-
-1. Backups must be automated where possible.
-2. Production data must be backed up independently of the application server.
-3. Backups must be protected from unauthorized access.
-4. Backup retention must be defined.
-5. Backups must be periodically tested.
-6. Recovery procedures must be documented.
-7. Backup credentials must never be stored in source code.
-8. Critical backups should not depend on the same infrastructure as the primary database.
-9. Backup failures must be detectable.
-10. The recovery process must be tested before it is needed in production.
-
----
-
-# 13.3 Backup Scope
-
-Backups should protect:
-
-```text
-Database schema
-Database records
-System configuration
-Gamification configuration
-Teacher data
-Group data
-Student data
-Attendance
-Homework
-Payments
-Points
-XP
-Levels
-Badges
-Achievements
-Notes
-Activity records
-
-
-****
-
-# Section 14 — Data Archiving & Long-Term Storage
-
----
-
-## 14.1 Purpose
-
-This section defines how historical, inactive, or obsolete data is archived and retained without unnecessarily affecting the performance of the active database.
-
-The archive strategy must preserve important historical information while keeping the operational database lightweight and efficient.
-
----
-
-# 14.2 Archiving Principles
-
-Data archiving shall follow these principles:
-
-1. Historical data must not be deleted merely to improve performance.
-2. Archived data must remain recoverable when required.
-3. Archiving must preserve data integrity.
-4. Archived records must retain their historical meaning.
-5. Active application workflows must not depend unnecessarily on archived data.
-6. Archiving must not bypass RLS or other security requirements.
-7. Archiving operations must be documented and auditable.
-8. Archiving must not modify historical business results.
-9. User data must not be archived solely because it is old without an appropriate retention policy.
-10. Permanent deletion must be treated separately from archiving.
-
----
-
-# 14.3 Active vs Archived Data
-
-The system should distinguish between:
-
-```text
-Active Data
-    ↓
-Frequently accessed operational data
-
-Archived Data
-    ↓
-Historical data retained for reference
-
-# Section 15 — Database Monitoring & Observability
-
----
-
-## 15.1 Purpose
-
-This section defines the monitoring, logging, metrics, alerting, and observability requirements for the production database.
-
-The purpose is to detect:
-
-- Database availability problems
-- Slow queries
-- Excessive resource usage
-- Failed migrations
-- Backup failures
-- Connection problems
-- Storage growth
-- Locking and blocking
-- Unexpected database errors
-- Security-related anomalies
-
-The monitoring system must provide enough information to identify and diagnose database problems without exposing sensitive user data.
-
----
-
-# 15.2 Monitoring Principles
-
-Database monitoring shall follow these principles:
-
-1. Production database health must be continuously observable.
-2. Critical failures must generate alerts.
-3. Monitoring must not expose sensitive data.
-4. Logs must contain sufficient diagnostic information.
-5. Monitoring must have minimal performance overhead.
-6. Database metrics must be retained for an appropriate period.
-7. Alerts must distinguish critical problems from informational events.
-8. Monitoring configuration must be version-controlled where practical.
-9. Database monitoring must cover both infrastructure and application-level behavior.
-10. Monitoring must support incident investigation.
-
----
-
-# 15.3 Availability Monitoring
-
-The system should monitor database availability.
-
-At minimum, detect:
-
-```text
-Database reachable
-Database unavailable
-Connection refused
-Connection timeout
-Authentication failure
-Repeated connection failure
-
-# Section 16 — Database Security & Access Control
-
----
-
-## 16.1 Purpose
-
-This section defines the database security, authentication, authorization, access control, row-level security, credential management, and data protection requirements.
-
-The database must ensure that:
-
-- Teachers can access only authorized data.
-- Application services have only required permissions.
-- Sensitive credentials are protected.
-- Database operations are auditable where required.
-- RLS policies prevent cross-teacher data access.
-- Production database access is restricted.
-- Security controls are applied consistently across active and archived data.
-
----
-
-# 16.2 Security Principles
-
-Database security shall follow these principles:
-
-1. Least privilege.
-2. Defense in depth.
-3. Explicit authorization.
-4. Default deny where appropriate.
-5. No credentials in source code.
-6. RLS for tenant/data isolation.
-7. Production access must be restricted.
-8. Sensitive data must be minimized.
-9. Administrative operations must be auditable.
-10. Security configuration must be version-controlled where practical.
-
----
-
-# 16.3 Authentication vs Authorization
-
-Authentication determines:
-
-```text
-"Who is this user?"
-
-# Section 17 — Database Performance & Optimization
-
----
-
-## 17.1 Purpose
-
-This section defines the database performance, query optimization, indexing, pagination, caching, transaction, and scalability requirements.
-
-The database must remain responsive as the number of:
-
-- Teachers
-- Groups
-- Students
-- Lessons
-- Attendance records
-- Homework records
-- Gamification records
-- Activity logs
-
-increases over time.
-
-The initial architecture should remain lightweight and should not introduce unnecessary infrastructure complexity.
-
----
-
-# 17.2 Performance Principles
-
-Database performance shall follow these principles:
-
-1. Queries must retrieve only required data.
-2. Appropriate indexes must be used.
-3. Large datasets must not be loaded unnecessarily.
-4. Pagination must be used for potentially large result sets.
-5. N+1 query patterns must be avoided.
-6. Expensive calculations should not be repeated unnecessarily.
-7. Transactions should remain as short as practical.
-8. Database-side filtering should be preferred over loading unnecessary records into the application.
-9. Performance optimizations must not bypass security controls.
-10. Premature optimization should be avoided.
-11. Performance decisions must be based on measurable workload.
-12. The simplest architecture that satisfies the performance requirement should be preferred.
-
----
-
-# 17.3 Performance Targets
-
-The application should establish practical database performance targets.
-
-Initial target:
-
-```text
-Normal CRUD operation
-    ↓
-Fast response under normal workload
-
-Common journal query
-    ↓
-Target ≤ 500 ms database-side execution
-
-Simple lookup
-    ↓
-Target ≤ 100 ms database-side execution
-
-# Section 18 — Backup, Restore & Disaster Recovery
-
----
-
-## 18.1 Purpose
-
-This section defines the database backup, restore, disaster recovery, data recovery, and business continuity requirements.
-
-The purpose is to ensure that database data can be recovered after:
+  migrations/
+    001_initial_schema.sql
+    002_core_relationships.sql
+    003_journal_and_attendance.sql
+    004_homework.sql
+    005_finance.sql
+    006_gamification.sql
+    007_indexes.sql
+    008_constraints.sql
+    009_functions.sql
+    010_rls.sql
+    011_seed_configuration.sql
+    ...
+
+## 12.4 Migration Rules
+
+- Never silently modify an already-applied migration.
+- Create a new migration for changes.
+- Destructive migrations require review.
+- Test migrations against a clean database.
+- Test upgrade migrations against a representative existing database.
+- Keep application schema and migrations synchronized.
+
+## 12.5 Schema Drift
+
+Production schema must be reproducible from the repository migrations.
+
+Any detected drift must be investigated and resolved.
+
+============================================================
+SECTION 13 — BACKUP, RESTORE & DISASTER RECOVERY
+============================================================
+
+## 13.1 Scope
+
+Recovery must protect:
+
+- Schema
+- Tables
+- Constraints
+- Functions
+- Triggers
+- RLS policies
+- Configuration
+- Teacher data
+- Student data
+- Attendance
+- Homework
+- Payments
+- Gamification
+- Activity history
+- Required Storage metadata/files
+
+## 13.2 Backup Principles
+
+- Automated where supported
+- Protected from unauthorized access
+- Independently recoverable
+- Monitored
+- Retained according to policy
+- Periodically restore-tested
+
+## 13.3 Recovery Objectives
+
+The project must define operational targets for:
+
+RPO:
+Maximum acceptable data loss.
+
+RTO:
+Maximum acceptable recovery time.
+
+The initial values should be selected according to the project's actual operational needs and documented before production launch.
+
+## 13.4 Restore Testing
+
+A backup is not considered valid until a restore has been tested.
+
+Restore testing must verify:
+
+- Schema
+- Data
+- Constraints
+- RLS
+- Functions
+- Triggers
+- Application connectivity
+- Storage references where applicable
+
+## 13.5 Incident Recovery
+
+Recovery procedures must cover:
 
 - Accidental deletion
-- Database corruption
 - Failed migration
-- Application error
-- Infrastructure failure
+- Corruption
 - Credential compromise
 - Hosting failure
 - Operational mistake
-- Other unexpected incidents
 
-The recovery architecture must remain lightweight and appropriate for the project's initial scale.
+============================================================
+SECTION 14 — DATA ARCHIVING, RETENTION & DELETION
+============================================================
 
----
+## 14.1 Archiving Principles
 
-# 18.2 Backup Principles
+Historical data must not be deleted merely to improve performance.
 
-Database backups shall follow these principles:
+Archived data must:
 
-1. Production data must be recoverable.
-2. Backups must be automated where supported.
-3. Backup status must be monitored.
-4. Backups must be protected from unauthorized access.
-5. Backups must not depend exclusively on the production database.
-6. Restore procedures must be tested.
-7. Backup retention must be explicitly defined.
-8. Backup credentials must be protected.
-9. Backup failures must generate operational alerts.
-10. The recovery process must be documented.
+- Remain recoverable
+- Preserve historical meaning
+- Respect RLS
+- Remain auditable
+- Not change historical business results
 
----
+## 14.2 Active vs Archived
 
-# 18.3 Backup Scope
+Active data:
+Frequently used operational records.
 
-The backup strategy should cover:
+Archived data:
+Historical records retained for reference and compliance/business needs.
 
-```text
-Database schema
-Database tables
-Indexes where applicable
-Constraints
-Functions
-Triggers
-RLS policies
-Database configuration required for recovery
-Required metadata
+## 14.3 Soft Deactivation
 
-# Section 19 — Database Maintenance & Lifecycle Management
+Where historical records exist, prefer status-based deactivation or archival over destructive deletion.
 
----
+Examples:
+
+- teacher status
+- group status
+- student status
+- certificate status where applicable
+
+## 14.4 Retention Policy
+
+Retention periods must be defined for:
+
+- Activity logs
+- Audit logs
+- Notifications
+- Import/export records
+- Archived records
+- Generated files
+- Temporary files
+
+Do not invent legal retention periods. Use project requirements and applicable law/policy.
+
+## 14.5 Permanent Deletion
+
+Permanent deletion must be a separate controlled process.
+
+It must:
+
+- Require authorization
+- Respect dependencies
+- Be auditable
+- Avoid accidental destruction of financial/academic history
+
+============================================================
+SECTION 15 — MONITORING & OBSERVABILITY
+============================================================
+
+## 15.1 Monitoring Scope
+
+Monitor:
+
+- Availability
+- Query latency
+- Error rates
+- Connection failures
+- Connection pool usage
+- Database size
+- Storage growth
+- Slow queries
+- Locks/blocking
+- Failed migrations
+- Backup failures
+- Unexpected security anomalies
+
+## 15.2 Logging
+
+Logs must provide enough diagnostic information without exposing:
+
+- Passwords
+- API keys
+- Tokens
+- Unnecessary personal data
+- Sensitive credentials
+
+## 15.3 Alerts
+
+Critical alerts should cover:
+
+- Database unavailable
+- Repeated connection failure
+- Backup failure
+- Migration failure
+- Severe resource exhaustion
+- Abnormal error rate
+- Storage exhaustion risk
+
+## 15.4 Auditability
+
+Business-critical administrative actions must be traceable through audit/activity records where required.
+
+============================================================
+SECTION 16 — ACCESS CONTROL, PRIVILEGES & OPERATIONAL SECURITY
+============================================================
+
+## 16.1 Purpose
+
+This section covers operational database access separately from tenant RLS.
+
+RLS answers:
+
+"Which records may this authenticated teacher access?"
+
+Access control answers:
+
+"Which technical identities may perform which database operations?"
+
+## 16.2 Least Privilege
+
+Technical identities must receive only the permissions they require.
+
+Separate, where practical:
+
+- Browser/authenticated client access
+- Trusted server-side access
+- Administrative/deployment access
+
+## 16.3 Production Access
+
+Direct production database access must be restricted.
+
+Administrative credentials must not be used in frontend code.
+
+## 16.4 Service Role
+
+Supabase service-role credentials bypass normal RLS protections and therefore must only be used in trusted server-side environments.
+
+Never expose them to browser clients.
+
+## 16.5 Storage Security
+
+Storage buckets must have appropriate access policies.
+
+A teacher must not access another teacher's private certificate/export/import files.
+
+File paths should include a secure ownership strategy.
+
+## 16.6 Operational Audit
+
+Significant administrative/security operations should be auditable.
+
+============================================================
+SECTION 17 — PERFORMANCE & OPTIMIZATION
+============================================================
+
+## 17.1 Principles
+
+1. Retrieve only required data.
+2. Use appropriate indexes.
+3. Paginate large datasets.
+4. Avoid N+1 queries.
+5. Keep transactions short where possible.
+6. Use database-side filtering.
+7. Do not bypass RLS for performance.
+8. Measure before optimizing.
+9. Prefer the simplest architecture that satisfies workload.
+
+## 17.2 Primary Workloads
+
+Optimize for:
+
+- Journal loading
+- Attendance updates
+- Homework updates
+- Student search
+- Dashboard statistics
+- Rankings
+- Analytics
+- Activity history
+
+## 17.3 Performance Targets
+
+Initial engineering targets:
+
+- Simple indexed lookup: target <= 100 ms database execution under normal workload.
+- Common journal query: target <= 500 ms database execution under normal workload.
+
+These are engineering targets, not guarantees.
+
+End-to-end application latency must be evaluated separately.
+
+## 17.4 Pagination
+
+Use pagination for:
+
+- Activity logs
+- Audit logs
+- Point transactions
+- XP transactions
+- Attendance history
+- Homework history
+- Payments
+- Student lists
+- Reports where necessary
+
+Use cursor/keyset pagination for large histories when beneficial.
+
+## 17.5 Aggregation
+
+Do not repeatedly calculate expensive analytics for every request if the same results can be safely cached or aggregated.
+
+However, persisted aggregates must remain derived and rebuildable.
+
+## 17.6 Scalability
+
+The system must comfortably support the initial maximum of 40 teachers without enterprise infrastructure.
+
+Future scaling decisions must be based on measured workload.
+
+============================================================
+SECTION 18 — DATABASE MAINTENANCE & LIFECYCLE
+============================================================
+
+## 18.1 Maintenance
+
+PostgreSQL maintenance mechanisms should be used appropriately:
+
+- VACUUM
+- ANALYZE
+- Autovacuum
+- Autoanalyze
+
+## 18.2 Growth Monitoring
+
+Monitor growth of:
+
+- Attendance records
+- Homework records
+- Transactions
+- Activity logs
+- Audit logs
+- Notifications
+- Stored files
+- Reports
+
+## 18.3 Index Maintenance
+
+Indexes must be reviewed when:
+
+- Query patterns change
+- Tables grow significantly
+- Write performance degrades
+- Duplicate indexes are detected
+- Query plans change
+
+## 18.4 Deprecated Schema
+
+Deprecated tables/columns must:
+
+1. Be marked deprecated.
+2. Stop receiving new writes.
+3. Be migrated where necessary.
+4. Remain available until safe removal.
+5. Be removed only through migrations.
+
+## 18.5 Maintenance Safety
+
+Maintenance must not:
+
+- bypass RLS
+- destroy historical data accidentally
+- change historical business results
+- break application migrations
+- interrupt normal teacher workflows unnecessarily
+
+============================================================
+SECTION 19 — DATABASE TESTING & VALIDATION
+============================================================
 
 ## 19.1 Purpose
 
-This section defines the database maintenance, lifecycle management, cleanup, vacuuming, statistics, schema evolution, deprecated data handling, and long-term database health requirements.
+The database is not complete until its structure and security have been tested.
 
-The database must remain:
+## 19.2 Schema Tests
 
-- Stable
-- Maintainable
-- Performant
-- Secure
-- Consistent
-- Recoverable
-- Scalable within the project's expected growth
+Verify:
 
-Maintenance operations must not unnecessarily interrupt normal teacher workflows.
+- All required tables exist.
+- All required columns exist.
+- Data types are correct.
+- NOT NULL constraints are correct.
+- Defaults are correct.
+- Foreign keys exist.
+- Unique constraints exist.
+- Check constraints exist.
+- Indexes exist.
 
----
+## 19.3 Relationship Tests
 
-# 19.2 Maintenance Principles
+Verify:
 
-Database maintenance shall follow these principles:
+- Valid parent-child records succeed.
+- Missing parents fail.
+- Cross-teacher relationships fail.
+- Duplicate authoritative events fail.
 
-1. Maintenance must be planned.
-2. Production maintenance must be controlled.
-3. Automated maintenance should be preferred where reliable.
-4. Maintenance must preserve data integrity.
-5. Maintenance must not bypass security controls.
-6. Destructive maintenance must require additional verification.
-7. Database growth must be monitored.
-8. Deprecated structures must be removed carefully.
-9. Schema changes must be migration-controlled.
-10. Maintenance activities must be documented when operationally significant.
+## 19.4 RLS Tests
 
----
+For at least two teacher identities:
 
-# 19.3 PostgreSQL Automatic Maintenance
+Teacher A must not be able to:
 
-PostgreSQL automatic maintenance mechanisms should be enabled and appropriately configured.
+- SELECT Teacher B data
+- INSERT into Teacher B-owned relationships
+- UPDATE Teacher B data
+- DELETE Teacher B data
 
-The system should rely on PostgreSQL mechanisms such as:
+Teacher B must have the same isolation.
 
-```text
-VACUUM
-ANALYZE
-Autovacuum
-Autoanalyze
+## 19.5 Transaction Tests
 
-# Section 20 — Database Documentation, Governance & Final Standards
+Test critical workflows:
 
----
-
-## 20.1 Purpose
-
-This section defines the documentation, governance, ownership, change-control, review, and final database standards for the project.
-
-The purpose is to ensure that the database remains:
-
-- Understandable
-- Consistent
-- Maintainable
-- Secure
-- Performant
-- Recoverable
-- Properly documented
-- Controlled throughout its lifecycle
-
-This section serves as the final governance layer for all database-related decisions.
-
----
-
-# 20.2 Database as a Core System Component
-
-The database is a core component of the application architecture.
-
-It is responsible for storing and managing:
-
-```text
-Teachers
-Groups
-Students
-Lessons
 Attendance
+  -> points
+  -> XP
+  -> achievement/streak processing
+  -> activity log
+
 Homework
-Gamification
-Points
-XP
-Levels
-Badges
-Achievements
-Activity Logs
-System Configuration
-Historical Data
+  -> evaluation
+  -> points
+  -> XP
+  -> achievement processing
+  -> activity log
 
+Payment
+  -> payment record
+  -> status/statistics
+  -> activity log
 
+Certificate
+  -> certificate record
+  -> file reference
+  -> activity log
 
+Critical failures must not leave inconsistent partial data.
 
+## 19.6 Migration Tests
 
+Test:
 
+- Clean installation
+- Upgrade from previous migration
+- Roll-forward
+- Destructive migration safety
+- Seed idempotency
 
+## 19.7 Performance Tests
 
+Test representative workloads for:
 
+- Journal loading
+- Attendance updates
+- Student search
+- Homework history
+- Rankings
+- Dashboard statistics
+- Activity logs
 
+============================================================
+SECTION 20 — DOCUMENTATION, GOVERNANCE & FINAL ACCEPTANCE
+============================================================
 
+## 20.1 Documentation Requirements
 
+The repository must document:
 
+- Schema
+- Relationships
+- RLS
+- Constraints
+- Indexes
+- Functions
+- Triggers
+- Migrations
+- Seed configuration
+- Backup/recovery
+- Monitoring
+- Maintenance
+- Testing
 
+## 20.2 Cross-Document Consistency
 
+DATABASE.md must remain consistent with:
 
+- PROJECT_REQUIREMENTS.md
+- GAMIFICATION.md
+- API_SPECIFICATION.md
+- TECH_STACK.md
+- UI_GUIDE.md
+- DEVELOPMENT_RULES.md
+- DEPLOYMENT.md
+- ROADMAP.md
 
+If another document defines a business rule, DATABASE.md must not silently contradict it.
 
+## 20.3 Maximum Teacher Count
 
+The authoritative project limit is:
 
+MAXIMUM TEACHERS = 40
 
+No database documentation or schema constraint may incorrectly use the previous 20-teacher limit.
 
+The database must not artificially limit teacher count to 40 through a database row constraint unless explicitly required; 40 is the intended project capacity, not necessarily a hard SQL constraint.
 
+## 20.4 Final Database Acceptance Criteria
+
+DATABASE.md is considered implementation-ready only when all of the following are true:
+
+[ ] All required entities are defined.
+[ ] All required tables are fully specified.
+[ ] Every table has a primary key.
+[ ] Every required foreign key is defined.
+[ ] Delete/update behavior is defined.
+[ ] Required NOT NULL constraints are defined.
+[ ] Required UNIQUE constraints are defined.
+[ ] Required CHECK constraints are defined.
+[ ] Required indexes are defined.
+[ ] Teacher ownership is defined for every teacher-owned record.
+[ ] RLS coverage is defined for every teacher-owned table.
+[ ] SELECT/INSERT/UPDATE/DELETE policies are defined where applicable.
+[ ] Cross-teacher access is prevented.
+[ ] Student login is not required.
+[ ] Authentication uses Supabase Auth.
+[ ] Service-role credentials are server-side only.
+[ ] Storage ownership is secured.
+[ ] Historical records are preserved.
+[ ] Point and XP transactions are traceable.
+[ ] Gamification rules do not conflict with GAMIFICATION.md.
+[ ] Seed data is deterministic and idempotent.
+[ ] Migrations are version-controlled.
+[ ] Backup and restore procedures are documented.
+[ ] RPO/RTO targets are documented before production.
+[ ] Monitoring and alerting requirements are defined.
+[ ] Maintenance requirements are defined.
+[ ] Database tests are defined.
+[ ] Performance targets are defined.
+[ ] The schema supports the intended maximum of 40 teachers.
+[ ] Markdown/code blocks are syntactically valid.
+[ ] No duplicate/conflicting database sections remain.
+[ ] No critical schema decision is left to undocumented AI assumptions.
+
+## 20.5 Final Implementation Rule
+
+The implementation team or AI builder must not consider the database complete merely because the application can run.
+
+The database is complete only when:
+
+1. The schema is fully defined.
+2. Relationships are enforced.
+3. RLS is enforced.
+4. Constraints prevent invalid states.
+5. Critical workflows are transactional.
+6. Historical records are protected.
+7. Migrations reproduce the schema.
+8. Backup and recovery are operationally defined.
+9. Tests verify security and integrity.
+10. The database remains consistent with the other project documents.
+
+END OF DATABASE.md
